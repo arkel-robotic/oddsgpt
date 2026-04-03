@@ -13,9 +13,13 @@ services:
         sync: false
       - key: ADMIN_USERNAME
         sync: false
-      - key: RESEND_API_KEY
+      - key: OPERATOR_PASSWORD
         sync: false
-      - key: FROM_EMAIL
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASS
         sync: false
       - key: APP_URL
+        sync: false
+      - key: MONTHLY_CODE
         sync: false
