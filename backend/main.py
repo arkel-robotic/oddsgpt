@@ -531,8 +531,11 @@ class BanReq(BaseModel):    username:str=""; device_id:str=""; reason:str; expir
 class RoleReq(BaseModel):   username:str; role:str
 class CodeAddReq(BaseModel):code:str; grants_role:str="premium"; type:str="monthly"; expires_at:str=""
 
-@app.get("/"); async def root(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
-@app.get("/reset"); async def reset_page(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
+@app.get("/")
+async def root(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
+
+@app.get("/reset")
+async def reset_page(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
 
 @app.post("/api/auth/register")
 async def register(req:RegReq,bg:BackgroundTasks):
@@ -643,9 +646,14 @@ async def chat(req:ChatReq,user=Depends(get_user)):
     except Exception as e:
         print(f"[ERR] {e}"); return JSONResponse({"response":f"⚠️ Error: {str(e)}","confidence":None,"bets":[],"parlay":{}})
 
-@app.get("/api/sessions");  async def get_sessions(user=Depends(get_user)): return {"sessions":db_get_sessions(user["id"])}
-@app.get("/api/sessions/{sid}"); async def get_session(sid:str,user=Depends(get_user)): return {"history":db_get_history(sid,user["id"]),"bets":db_get_bets(sid)}
-@app.post("/api/sessions/new"); async def new_session(req:SessReq,user=Depends(get_user)): return {"session_id":db_new_session(user["id"],req.sport_tab)}
+@app.get("/api/sessions")
+async def get_sessions(user=Depends(get_user)): return {"sessions":db_get_sessions(user["id"])}
+
+@app.get("/api/sessions/{sid}")
+async def get_session(sid:str,user=Depends(get_user)): return {"history":db_get_history(sid,user["id"]),"bets":db_get_bets(sid)}
+
+@app.post("/api/sessions/new")
+async def new_session(req:SessReq,user=Depends(get_user)): return {"session_id":db_new_session(user["id"],req.sport_tab)}
 
 @app.get("/api/dashboard")
 async def dashboard(user=Depends(get_user)):
@@ -661,25 +669,30 @@ async def bet_result(req:BetReq,user=Depends(get_user)):
 @app.get("/api/hot-games")
 async def hot_games(sport:str="all"): return {"games":await get_hot_games(sport)}
 
-@app.get("/api/staff/users");   async def sf_users(u=Depends(staff_user)):
+@app.get("/api/staff/users")
+async def sf_users(u=Depends(staff_user)):
     with get_conn() as c: rows=c.execute("SELECT id,username,email,role,is_verified,daily_count,total_searches,premium_expires,is_banned,ban_reason,created_at,last_login FROM users ORDER BY created_at DESC").fetchall()
     return {"users":[dict(r) for r in rows]}
 
-@app.get("/api/staff/searches/{uid}"); async def sf_searches(uid:str,u=Depends(staff_user)):
+@app.get("/api/staff/searches/{uid}")
+async def sf_searches(uid:str,u=Depends(staff_user)):
     with get_conn() as c: rows=c.execute("SELECT query,sport,created_at FROM search_log WHERE user_id=? ORDER BY created_at DESC LIMIT 300",(uid,)).fetchall()
     return {"searches":[dict(r) for r in rows]}
 
-@app.get("/api/staff/sessions"); async def sf_sessions(u=Depends(staff_user)):
+@app.get("/api/staff/sessions")
+async def sf_sessions(u=Depends(staff_user)):
     with get_conn() as c: rows=c.execute("SELECT s.id,s.sport_tab,s.title,s.updated_at,u.username,u.role FROM sessions s JOIN users u ON s.user_id=u.id ORDER BY s.updated_at DESC LIMIT 300").fetchall()
     return {"sessions":[dict(r) for r in rows]}
 
-@app.get("/api/staff/session/{sid}"); async def sf_session(sid:str,u=Depends(staff_user)):
+@app.get("/api/staff/session/{sid}")
+async def sf_session(sid:str,u=Depends(staff_user)):
     with get_conn() as c:
         msgs=c.execute("SELECT role,content,created_at FROM messages WHERE session_id=? ORDER BY created_at",(sid,)).fetchall()
         bets=c.execute("SELECT * FROM saved_bets WHERE session_id=?",(sid,)).fetchall()
     return {"messages":[dict(m) for m in msgs],"bets":[dict(b) for b in bets]}
 
-@app.get("/api/owner/users"); async def ow_users(u=Depends(owner_user)):
+@app.get("/api/owner/users")
+async def ow_users(u=Depends(owner_user)):
     with get_conn() as c: rows=c.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
     return {"users":[dict(r) for r in rows]}
 
@@ -716,12 +729,15 @@ async def add_code_route(req:CodeAddReq,u=Depends(owner_user)):
     with get_conn() as c: c.execute("INSERT OR REPLACE INTO promo_codes VALUES (?,?,?,?,?)",(code,req.type,req.grants_role,exp,datetime.now().isoformat()))
     return {"status":f"Code '{code}' added"}
 
-@app.get("/api/owner/codes"); async def get_codes(u=Depends(owner_user)):
+@app.get("/api/owner/codes")
+async def get_codes(u=Depends(owner_user)):
     with get_conn() as c: rows=c.execute("SELECT * FROM promo_codes ORDER BY created_at DESC").fetchall()
     return {"codes":[dict(r) for r in rows]}
 
-@app.get("/api/owner/bans"); async def get_bans(u=Depends(owner_user)):
+@app.get("/api/owner/bans")
+async def get_bans(u=Depends(owner_user)):
     with get_conn() as c: rows=c.execute("SELECT bl.*,u.username FROM ban_log bl LEFT JOIN users u ON bl.user_id=u.id ORDER BY bl.created_at DESC LIMIT 200").fetchall()
     return {"bans":[dict(r) for r in rows]}
 
-@app.get("/api/health"); async def health(): return {"status":"online","model":GROQ_MODEL,"version":"6.0"}
+@app.get("/api/health")
+async def health(): return {"status":"online","model":GROQ_MODEL,"version":"6.0"}
