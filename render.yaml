@@ -4,14 +4,20 @@ services:
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: oddsgpt-data
+      mountPath: /opt/render/project/src/backend
+      sizeGB: 1
     envVars:
+      - key: DB_PATH
+        value: /opt/render/project/src/backend/oddsgpt.db
       - key: GROQ_API_KEY
         sync: false
       - key: TAVILY_API_KEY
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: ADMIN_USERNAME
+      - key: OWNER_USERNAME
         sync: false
       - key: OPERATOR_PASSWORD
         sync: false
