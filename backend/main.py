@@ -46,10 +46,29 @@ FREE_LIMIT = 3
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.DatabaseError:
+        conn.close()
+        os.remove(DB_PATH)
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 def init_db():
+    # Auto-recover from corrupted database file
+    if os.path.exists(DB_PATH):
+        try:
+            test = sqlite3.connect(DB_PATH)
+            test.execute("SELECT 1")
+            test.close()
+        except sqlite3.DatabaseError:
+            print(f"[DB] Corrupted database at {DB_PATH} — deleting and recreating.")
+            try:
+                os.remove(DB_PATH)
+            except Exception:
+                pass
     with get_conn() as c:
         c.executescript("""
             CREATE TABLE IF NOT EXISTS users (
