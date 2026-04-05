@@ -424,14 +424,45 @@ async def tavily_one(sess,query):
 
 async def search_match(team1,team2,sport):
     if not TAVILY_API_KEY: return "No Tavily key. Add at app.tavily.com for live data."
-    today=datetime.now().strftime("%Y-%m-%d"); matchup=f"{team1} vs {team2}"
+    today=datetime.now().strftime("%Y-%m-%d")
+    year=datetime.now().strftime("%Y")
+    matchup=f"{team1} vs {team2}"
+
     if sport in("ufc","mma"):
-        queries=[("📅 EVENT",f"{matchup} UFC event date time location {today}"),("🥊 RECORDS",f"{team1} {team2} UFC record history {today}"),("💪 STATS",f"{team1} {team2} striking grappling reach {today}"),("🏋️ CAMP",f"{team1} {team2} training camp weight cut {today}"),("🎰 ODDS",f"{matchup} UFC betting odds {today}")]
+        queries=[
+            ("📅 EVENT DATE/TIME",   f"{matchup} UFC MMA fight date time location {today}"),
+            ("🥊 FIGHTER RECORDS",   f"{team1} {team2} UFC MMA current record 2025 2026"),
+            ("💪 FIGHTER STATS",     f"{team1} striking grappling stats reach UFC {today}"),
+            ("🏋️ CAMP & WEIGHT",     f"{team1} {team2} training camp weight cut news {today}"),
+            ("🎰 FIGHT ODDS",        f"{matchup} UFC betting odds {today}"),
+            ("📰 LATEST NEWS",       f"{team1} {team2} UFC fight news {today}"),
+        ]
     elif sport in("football","soccer"):
-        queries=[("📅 DATE/TIME",f"{matchup} match date time kickoff venue {today}"),("📋 LINEUPS",f"{matchup} confirmed lineup predicted starting XI {today}"),("🏥 INJURIES",f"{team1} {team2} injuries suspended OUT doubtful {today}"),("🔢 FORMATION",f"{matchup} formation tactics system {today}"),("📊 FORM & H2H",f"{matchup} form last 5 results head to head {today}"),("🎰 ODDS & TIPS",f"{matchup} betting odds tips value {today} oddschecker"),("📈 STATS",f"{matchup} xG BTTS over 2.5 goals corners stats {today}"),("📰 TEAM NEWS",f"{team1} {team2} latest squad news transfers current players {today}")]
+        queries=[
+            ("📅 MATCH DATE/TIME",   f"{matchup} match date kickoff time venue {today}"),
+            ("📋 CONFIRMED LINEUP",  f"{matchup} confirmed lineup starting XI {today}"),
+            ("📋 PREDICTED LINEUP",  f"{matchup} predicted lineup {year} current squad"),
+            ("👥 CURRENT SQUAD",     f"{team1} current squad players {year} roster"),
+            ("👥 CURRENT SQUAD 2",   f"{team2} current squad players {year} roster"),
+            ("🏥 INJURIES OUT",      f"{team1} {team2} injuries suspended unavailable OUT {today}"),
+            ("🔢 FORMATION",         f"{matchup} formation tactical setup {today}"),
+            ("📊 RECENT FORM",       f"{team1} last 5 matches results {today}"),
+            ("📊 RECENT FORM 2",     f"{team2} last 5 matches results {today}"),
+            ("⚔️ HEAD TO HEAD",      f"{matchup} head to head history H2H results"),
+            ("🎰 ODDS & TIPS",       f"{matchup} betting odds tips {today}"),
+            ("📈 STATS",             f"{matchup} xG BTTS over 2.5 stats {today}"),
+        ]
     else:
-        queries=[("📅 DATE/TIME",f"{matchup} {sport} date time {today}"),("🎰 ODDS & TIPS",f"{matchup} {sport} betting odds {today}"),("🏥 INJURIES",f"{team1} {team2} injuries {today}"),("📊 FORM & H2H",f"{matchup} form results {today}"),("📈 STATS",f"{matchup} {sport} stats {today}")]
-    async with httpx.AsyncClient(timeout=15.0) as sess:
+        queries=[
+            ("📅 DATE/TIME",         f"{matchup} {sport} date time {today}"),
+            ("👥 CURRENT ROSTERS",   f"{team1} {team2} {sport} current roster players {year}"),
+            ("🏥 INJURIES",          f"{team1} {team2} {sport} injuries {today}"),
+            ("📊 FORM & H2H",        f"{matchup} {sport} form results head to head {today}"),
+            ("🎰 ODDS & TIPS",       f"{matchup} {sport} betting odds {today}"),
+            ("📈 STATS",             f"{matchup} {sport} statistics {today}"),
+        ]
+
+    async with httpx.AsyncClient(timeout=20.0) as sess:
         results=await asyncio.gather(*[tavily_one(sess,q) for _,q in queries],return_exceptions=True)
     parts=[]
     for (label,_),r in zip(queries,results):
@@ -457,37 +488,59 @@ async def needs_clarify(msg,t1,t2):
     except: pass
     return None
 
-SYSTEM_PROMPT="""You are OddsGPT — an elite professional sports betting analyst. Respond in ENGLISH.
+SYSTEM_PROMPT="""You are OddsGPT — an elite professional sports betting analyst.
 Today: {date} | Sport: {sport}
 
-⚠️ CRITICAL: Your training data about current squads is OUTDATED (players move clubs often).
-USE ONLY the live data below for current rosters, injuries, lineups.
-DO NOT rely on training knowledge for who plays where NOW.
+╔══════════════════════════════════════════════════════════╗
+║  ⛔ ABSOLUTE RULE — READ BEFORE ANYTHING ELSE            ║
+║  Your training data about player locations is WRONG.     ║
+║  Players transfer clubs every season.                    ║
+║  Henderson left Liverpool. Messi/Neymar left PSG.        ║
+║  Ramos left PSG. Many others have moved.                 ║
+║  YOU MUST use ONLY the LIVE DATA below for:              ║
+║  • Current squad / who plays for which team              ║
+║  • Lineups and formations                                ║
+║  • Injuries and suspensions                              ║
+║  • Recent form and results                               ║
+║  If a player is NOT mentioned in the live data,          ║
+║  DO NOT include them. Write "not confirmed in live data" ║
+╚══════════════════════════════════════════════════════════╝
 
-=== LIVE DATA ===
+=== LIVE DATA FROM INTERNET (your ONLY source for current facts) ===
 {live_data}
-=== END ===
+=== END OF LIVE DATA ===
+
+Now write your analysis using ONLY what is in the live data above:
 
 {sport_section}
 
-**📅 MATCH DATE & TIME** — Exact date, time, venue from live data. If not found: "Date not yet confirmed."
-**📊 CURRENT FORM** — Last 5 results for each team/player (from live data only)
-**⚔️ H2H** — Last 5 head to head meetings
-**🏥 INJURIES & SUSPENSIONS** — ONLY players confirmed OUT/doubtful from live data. Do NOT guess.
-**📋 LINEUPS** — Use confirmed/predicted lineups from live data. State if confirmed by the club or predicted.
-**💰 ODDS** — Current odds. Identify best value bet.
-**📈 KEY STATS** — BTTS rate, Over 2.5 rate, average goals/game, xG if available.
-**💡 EXPERT TIPS** — What prediction sites/tipsters say.
+**📅 MATCH DATE & TIME** — State exact date, time and venue from live data. Format: "Match: [Date] at [Time] — [Venue]". If not in live data write: "Date/time not yet confirmed."
+
+**📊 CURRENT FORM** — Last 5 results for EACH team/fighter. Use ONLY results from live data above. Format each result as: W/D/L Score. If not in live data write: "Form not available in live data."
+
+**⚔️ HEAD TO HEAD** — Recent H2H meetings from live data only. Who has the historical edge?
+
+**🏥 INJURIES & SUSPENSIONS** — List ONLY players confirmed OUT or DOUBTFUL from the live data above. If a player is not mentioned in live data as injured, do NOT add them. If no injuries confirmed write: "No confirmed injuries in live data."
+
+**📋 LINEUPS** — Use ONLY lineups found in live data. Clearly label: CONFIRMED (if club announced) or PREDICTED (if from prediction sites). Do NOT invent players from memory.
+
+**💰 ODDS** — Current bookmaker odds from live data. State best value bet.
+
+**📈 KEY STATS** — BTTS rate, Over 2.5 goals rate, average goals per game (from live data).
+
+**💡 EXPERT CONSENSUS** — What do prediction sites and tipsters say?
 
 ---
 🎯 MY CONCLUSION:
-4-6 sentences of direct personal advice. Start with "In my opinion..." Be specific about markets, stakes, and reasoning.
+Write 4-6 sentences of direct, confident advice. Start with "In my opinion..."
+Tell the client exactly: what to bet, what odds to target, what to avoid, and why.
+Base this ONLY on the live data above.
 ---
 
-Bet format (one per line at end):
-BET: [pick] | TYPE: [type] | CONFIDENCE: [0-100] | RISK: [Low/Medium/High] | ODDS: [range] | MATCH: [teams] | REASON: [sentence]
+Then write your bets at the very end, one per line, EXACTLY in this format:
+BET: [pick] | TYPE: [1X2/BTTS/Over-Under/Handicap/etc] | CONFIDENCE: [0-100] | RISK: [Low/Medium/High] | ODDS: [range] | MATCH: [Team A vs Team B] | REASON: [one sentence using live data]
 
-Give 4-6 BET lines covering 1X2, BTTS, Over/Under, Handicap."""
+Give 4-6 BET lines covering different markets."""
 
 FOOTBALL_EXTRA="""**🔢 FORMATION & TACTICS**
 State both teams' formation from live data. Analyze tactical matchup, key positional battles, which system has the advantage.
