@@ -29,3 +29,9 @@ services:
         sync: false
       - key: MONTHLY_CODE
         sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_SECRET
+        sync: false
+      - key: PAYPAL_MODE
+        value: sandbox

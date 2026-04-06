@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
-<meta name="theme-color" content="#07090e"/>
+<meta name="theme-color" content="#050810"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>OddsGPT — AI Betting Analyst</title>
@@ -11,318 +11,351 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07090e;--s:#0c1018;--p:#101520;--p2:#141a24;
-  --b:#1c2535;--b2:#243040;
-  --a:#f0c040;--a2:#e05c20;--a3:#30d080;--bl:#3080ff;
-  --t:#dde4f0;--m:#4a5a70;--m2:#6a7a90;
-  --win:#30d080;--lose:#f05050;--warn:#f0c040;
+  --bg:#050810;--s:#080d18;--p:#0c1220;--p2:#101828;
+  --b:#162030;--b2:#1e2e42;--b3:#243850;
+  --a:#f5c842;--a2:#ff6b35;--a3:#00d084;--bl:#4080ff;--pu:#8b5cf6;
+  --t:#e8f0fe;--m:#3a5068;--m2:#5a7090;--m3:#7a90a8;
+  --win:#00d084;--lose:#ff4560;--warn:#f5c842;
   --sb:env(safe-area-inset-bottom,0px);
   --st:env(safe-area-inset-top,0px);
+  --grd:linear-gradient(135deg,#f5c842,#ff6b35);
 }
 html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--t);overflow:hidden;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;text-size-adjust:100%}
 
-/* ─── AUTH ──────────────────────────────────────────────────── */
+/* ═══ SCROLLBAR ══════════════════════════════════════════════ */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:2px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ═══ AUTH ═══════════════════════════════════════════════════ */
 .auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px;padding-top:calc(16px + var(--st))}
-.auth-box{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:28px 22px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:30px;text-align:center;margin-bottom:4px}
-.logo-g{color:var(--a)} .logo-w{color:var(--t)}
-.auth-tag{text-align:center;font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
-.tabs2{display:flex;background:var(--p);border-radius:8px;padding:3px;gap:3px;margin-bottom:18px}
-.t2{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px;transition:all .2s;color:var(--m);background:none;border:none;font-family:'Outfit',sans-serif}
-.t2.on{background:var(--a);color:#000}
-.fd{margin-bottom:12px}
-.fd label{display:block;font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
-.fd input{width:100%;background:var(--p);border:1px solid var(--b);border-radius:8px;padding:12px 14px;color:var(--t);font-family:'Outfit',sans-serif;font-size:16px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
-.fd input:focus{border-color:rgba(240,192,64,.4)}
-.abtn{width:100%;background:var(--a);border:none;border-radius:8px;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;padding:13px;cursor:pointer;transition:all .2s;margin-top:4px;touch-action:manipulation}
-.abtn:active{transform:scale(.97)}
-.alink{text-align:center;margin-top:10px;font-size:12px;color:var(--m)}
-.alink a{color:var(--a);cursor:pointer}
-.aerr{background:rgba(240,80,80,.1);border:1px solid rgba(240,80,80,.2);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--lose);margin-top:8px;display:none}
-.aok{background:rgba(48,208,128,.1);border:1px solid rgba(48,208,128,.2);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--win);margin-top:8px;display:none}
-.terms-note{font-size:10px;color:var(--m);text-align:center;margin-top:10px;line-height:1.5}
+.auth-wrap{width:100%;max-width:420px}
+.auth-brand{text-align:center;margin-bottom:28px}
+.auth-brand .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:36px;letter-spacing:-1px}
+.auth-brand .logo-g{background:var(--grd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-brand .logo-w{color:var(--t)}
+.auth-brand .tagline{font-size:11px;color:var(--m3);font-family:'JetBrains Mono',monospace;letter-spacing:3px;text-transform:uppercase;margin-top:6px}
+.auth-box{background:var(--s);border:1px solid var(--b2);border-radius:18px;padding:28px 24px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(245,200,66,.04)}
+.tabs2{display:flex;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:3px;gap:3px;margin-bottom:20px}
+.t2{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border-radius:7px;transition:all .2s;color:var(--m3);background:none;border:none;font-family:'Outfit',sans-serif}
+.t2.on{background:var(--grd);color:#000;font-weight:700}
+.fd{margin-bottom:13px}
+.fd label{display:block;font-size:10px;color:var(--m3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
+.fd input{width:100%;background:var(--p);border:1px solid var(--b2);border-radius:9px;padding:12px 14px;color:var(--t);font-family:'Outfit',sans-serif;font-size:16px;outline:none;transition:all .2s;-webkit-appearance:none}
+.fd input:focus{border-color:rgba(245,200,66,.5);background:var(--p2);box-shadow:0 0 0 3px rgba(245,200,66,.08)}
+.abtn{width:100%;background:var(--grd);border:none;border-radius:10px;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;padding:14px;cursor:pointer;transition:all .2s;margin-top:6px;letter-spacing:.3px}
+.abtn:active{transform:scale(.97);opacity:.9}
+.alink{text-align:center;margin-top:12px;font-size:12px;color:var(--m3)}
+.alink a{color:var(--a);cursor:pointer;text-decoration:none}
+.aerr{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.25);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--lose);margin-top:8px;display:none;line-height:1.5}
+.aok{background:rgba(0,208,132,.1);border:1px solid rgba(0,208,132,.25);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--win);margin-top:8px;display:none}
+.terms-note{font-size:10px;color:var(--m);text-align:center;margin-top:12px;line-height:1.6}
 .terms-note a{color:var(--a);cursor:pointer}
+.vbanner{background:linear-gradient(135deg,rgba(245,200,66,.1),rgba(245,200,66,.05));border:1px solid rgba(245,200,66,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--warn);margin-bottom:14px;display:none;text-align:center;line-height:1.5}
 
-/* verify banner */
-.verify-banner{background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--warn);margin-bottom:12px;display:none;text-align:center}
-
-/* ─── MODALS ─────────────────────────────────────────────────── */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:900;padding:0}
+/* ═══ MODALS ══════════════════════════════════════════════════ */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;z-index:900;padding:0}
 .ov.show{display:flex}
 .ov.center{align-items:center;padding:16px}
-.mbox{background:var(--s);border:1px solid var(--b);border-radius:16px 16px 0 0;padding:20px 18px calc(20px + var(--sb));width:100%;max-width:500px;max-height:92vh;overflow-y:auto}
-.ov.center .mbox{border-radius:14px;padding:22px 20px;margin:auto}
-.mttl{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;color:var(--a);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
-.xb{background:none;border:none;color:var(--m);font-size:20px;cursor:pointer;line-height:1;padding:4px}
+.mbox{background:var(--s);border:1px solid var(--b2);border-top:1px solid var(--b3);border-radius:18px 18px 0 0;padding:20px 18px calc(20px + var(--sb));width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
+.ov.center .mbox{border-radius:16px;padding:24px 20px;margin:auto}
+.mttl{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;color:var(--a);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.drag-bar{width:36px;height:4px;background:var(--b3);border-radius:2px;margin:0 auto 16px;display:block}
+.xb{background:var(--p);border:1px solid var(--b2);color:var(--m3);font-size:14px;cursor:pointer;line-height:1;padding:5px 8px;border-radius:6px}
 
-/* ─── APP ────────────────────────────────────────────────────── */
+/* ═══ APP ══════════════════════════════════════════════════════ */
 .app{display:none;height:100vh;height:100dvh}
 .app.on{display:flex;flex-direction:column}
 
 /* Topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--st)) 14px 10px;background:var(--s);border-bottom:1px solid var(--b);flex-shrink:0;gap:8px}
-.tb-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;flex-shrink:0}
-.tb-right{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
-.rb{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:9px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;font-weight:700;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
-.rb-free{background:rgba(74,90,112,.2);color:var(--m);border:1px solid rgba(74,90,112,.3)}
-.rb-premium{background:rgba(240,192,64,.15);color:var(--a);border:1px solid rgba(240,192,64,.3)}
-.rb-operator{background:rgba(48,128,255,.15);color:var(--bl);border:1px solid rgba(48,128,255,.3)}
-.rb-owner{background:rgba(224,92,32,.15);color:var(--a2);border:1px solid rgba(224,92,32,.3)}
-.ib{background:var(--p);border:1px solid var(--b);border-radius:8px;color:var(--t);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .2s;flex-shrink:0;touch-action:manipulation}
-.ib:hover{border-color:var(--a)}
+.tb-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:21px;letter-spacing:-.5px;flex-shrink:0}
+.tb-logo .g{background:var(--grd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tb-logo .w{color:var(--t)}
+.tb-right{display:flex;gap:6px;align-items:center}
+.rb{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:9px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;font-weight:700;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
+.rb-free{background:rgba(58,80,104,.2);color:var(--m3);border:1px solid rgba(58,80,104,.3)}
+.rb-premium{background:rgba(245,200,66,.12);color:var(--a);border:1px solid rgba(245,200,66,.3)}
+.rb-operator{background:rgba(64,128,255,.12);color:var(--bl);border:1px solid rgba(64,128,255,.3)}
+.rb-owner{background:rgba(255,107,53,.12);color:var(--a2);border:1px solid rgba(255,107,53,.3)}
+.ib{background:var(--p);border:1px solid var(--b2);border-radius:9px;color:var(--m3);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .2s;flex-shrink:0;touch-action:manipulation}
+.ib:active{background:var(--p2);border-color:var(--a)}
 
-/* Sport tabs — ALWAYS VISIBLE */
+/* Sport Tabs */
 .tabs-wrap{background:var(--s);border-bottom:1px solid var(--b);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs-wrap::-webkit-scrollbar{display:none}
-.tabs-inner{display:flex;padding:0 8px;min-width:max-content}
-.stab{padding:10px 12px;font-size:11px;font-weight:600;color:var(--m);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:4px;background:none;border-top:none;border-left:none;border-right:none;font-family:'Outfit',sans-serif;touch-action:manipulation}
+.tabs-inner{display:flex;padding:0 10px;min-width:max-content;gap:0}
+.stab{padding:11px 14px;font-size:11px;font-weight:600;color:var(--m3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:5px;background:none;border-top:none;border-left:none;border-right:none;font-family:'Outfit',sans-serif;touch-action:manipulation;letter-spacing:.2px}
 .stab:hover,.stab:active{color:var(--t)}
 .stab.on{color:var(--a);border-bottom-color:var(--a)}
+.stab .ti{font-size:14px}
 
 /* Body */
 .body-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-
-/* Panels */
 .panel{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
 .panel.on{display:flex}
 
 /* Messages */
-.msgs{flex:1;overflow-y:auto;padding:14px 14px 8px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
-.msgs::-webkit-scrollbar{width:3px}
-.msgs::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.msgs{flex:1;overflow-y:auto;padding:16px 14px 8px;-webkit-overflow-scrolling:touch}
 
 /* Welcome */
-.welcome{display:flex;flex-direction:column;align-items:center;text-align:center;padding:20px 12px 10px;animation:fi .5s}
+.welcome{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 14px 16px;animation:fi .5s}
 @keyframes fi{from{opacity:0}to{opacity:1}}
-@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.wbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:20px;padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--a);margin-bottom:12px;letter-spacing:1px}
-.welcome h1{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--t);margin-bottom:8px}
-.welcome p{color:var(--m2);font-size:13px;max-width:360px;line-height:1.7;margin-bottom:16px}
-.pulse{width:5px;height:5px;border-radius:50%;background:var(--a3);animation:pulse 2s infinite;display:inline-block}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.hot-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:left;width:100%;max-width:540px}
-.hot-games{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;width:100%;max-width:540px}
-.hg{background:var(--p);border:1px solid var(--b);border-radius:9px;padding:10px 12px;cursor:pointer;transition:all .2s;text-align:left;flex:1;min-width:130px;max-width:180px;touch-action:manipulation}
-.hg:active,.hg:hover{border-color:var(--a);background:rgba(240,192,64,.04)}
-.hg-sp{font-size:9px;color:var(--a2);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
-.hg-m{font-size:12px;font-weight:600;color:var(--t);line-height:1.3}
-.hg-d{font-size:10px;color:var(--m);margin-top:2px}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.wbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,208,132,.08);border:1px solid rgba(0,208,132,.2);border-radius:20px;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--win);margin-bottom:14px;letter-spacing:1px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--win);animation:pulse 2s infinite;display:inline-block;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.welcome h1{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--t);margin-bottom:8px;letter-spacing:-.5px;line-height:1.2}
+.welcome h1 .g{background:var(--grd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.welcome p{color:var(--m3);font-size:13px;max-width:360px;line-height:1.75;margin-bottom:22px}
+.hot-section{width:100%;max-width:560px}
+.hot-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hot-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m3);text-transform:uppercase;letter-spacing:2px}
+.hot-games{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.hg{background:var(--p);border:1px solid var(--b2);border-radius:11px;padding:11px 13px;cursor:pointer;transition:all .22s;text-align:left;flex:1;min-width:140px;max-width:190px;position:relative;overflow:hidden;touch-action:manipulation}
+.hg::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,200,66,.04),transparent);opacity:0;transition:opacity .2s}
+.hg:hover::before,.hg:active::before{opacity:1}
+.hg:hover,.hg:active{border-color:rgba(245,200,66,.4);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.hg-sp{font-size:9px;color:var(--a2);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.hg-m{font-size:12px;font-weight:700;color:var(--t);line-height:1.3;font-family:'Syne',sans-serif}
+.hg-comp{font-size:10px;color:var(--m3);margin-top:2px}
+.hg-d{font-size:10px;color:var(--m);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.load-txt{color:var(--m);font-size:12px;font-family:'JetBrains Mono',monospace;padding:8px 0}
 
-/* Disclaimer banner */
-.disc-banner{background:rgba(240,80,80,.08);border-top:2px solid rgba(240,80,80,.3);border-bottom:2px solid rgba(240,80,80,.3);padding:8px 14px;font-size:11px;color:#f08070;text-align:center;flex-shrink:0;font-family:'JetBrains Mono',monospace;line-height:1.5}
-.disc-banner span{color:var(--a);cursor:pointer;text-decoration:underline}
+/* Disclaimer */
+.disc-bar{background:linear-gradient(135deg,rgba(255,69,96,.08),rgba(255,107,53,.05));border-top:1px solid rgba(255,69,96,.2);border-bottom:1px solid rgba(255,69,96,.2);padding:7px 14px;font-size:11px;color:#ff8090;text-align:center;flex-shrink:0;line-height:1.5}
+.disc-bar strong{color:#ff6070}
+.disc-bar a{color:var(--a);cursor:pointer;text-decoration:underline}
 
 /* Messages */
-.msg{display:flex;gap:9px;margin-bottom:14px;animation:fu .3s}
+.msg{display:flex;gap:10px;margin-bottom:16px;animation:fu .3s}
 .msg-u{flex-direction:row-reverse}
-.av{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px}
-.av-u{background:linear-gradient(135deg,#1a2a4a,#0d1828);border:1px solid #1e3a5a;color:var(--bl);font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700}
-.av-a{background:linear-gradient(135deg,#1a1400,#0d0a00);border:1px solid #3a2a00}
+.av{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:'Syne',sans-serif}
+.av-u{background:linear-gradient(135deg,#162030,#0c1828);border:1px solid var(--b3);color:var(--bl);font-size:8px}
+.av-a{background:linear-gradient(135deg,#1a1200,#0d0900);border:1px solid #3a2a00;font-size:14px}
 .mb{max-width:86%;min-width:0}
 .msg-u .mb{align-items:flex-end;display:flex;flex-direction:column}
-.mn{font-size:9px;color:var(--m);font-family:'JetBrains Mono',monospace;margin-bottom:3px;letter-spacing:1px;text-transform:uppercase}
+.mn{font-size:9px;color:var(--m);font-family:'JetBrains Mono',monospace;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase}
 .msg-u .mn{text-align:right}
-.bbl{padding:10px 13px;border-radius:11px;font-size:13px;line-height:1.75;word-break:break-word;overflow-wrap:anywhere}
-.bbl-u{background:var(--p2);border:1px solid var(--b2);border-bottom-right-radius:3px}
-.bbl-a{background:var(--p);border:1px solid var(--b);border-bottom-left-radius:3px}
-.bbl strong{color:var(--a);font-family:'Syne',sans-serif}
+.bbl{padding:11px 14px;border-radius:13px;font-size:13px;line-height:1.8;word-break:break-word;overflow-wrap:anywhere}
+.bbl-u{background:var(--p2);border:1px solid var(--b3);border-bottom-right-radius:3px}
+.bbl-a{background:var(--p);border:1px solid var(--b2);border-bottom-left-radius:3px}
+.bbl strong{color:var(--a);font-family:'Syne',sans-serif;font-weight:700}
 .bbl em{color:var(--warn);font-style:normal}
-.bbl code{background:rgba(255,255,255,.05);border:1px solid var(--b2);border-radius:4px;padding:1px 5px;font-family:'JetBrains Mono',monospace;font-size:11px}
-.bbl ul{padding-left:14px;margin:4px 0}
-.bbl li{margin:2px 0;font-size:12px}
+.bbl code{background:rgba(255,255,255,.06);border:1px solid var(--b3);border-radius:5px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--a3)}
+.bbl ul{padding-left:16px;margin:5px 0}
+.bbl li{margin:3px 0;font-size:12px;color:var(--m3)}
+.bbl hr{border:none;border-top:1px solid var(--b2);margin:12px 0}
 
 /* Conclusion */
-.conc{background:linear-gradient(135deg,rgba(240,192,64,.07),rgba(240,192,64,.02));border:1px solid rgba(240,192,64,.25);border-radius:10px;padding:11px 13px;margin-top:9px}
-.conc-l{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--a);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
-.conc-t{font-size:13px;color:var(--t);line-height:1.7}
+.conc{background:linear-gradient(135deg,rgba(245,200,66,.08),rgba(245,200,66,.02));border:1px solid rgba(245,200,66,.2);border-radius:12px;padding:13px 15px;margin-top:10px;position:relative}
+.conc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grd);border-radius:3px 0 0 3px}
+.conc-l{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--a);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.conc-t{font-size:13px;color:var(--t);line-height:1.75}
 
 /* Bet cards */
-.bw{margin-top:9px}
-.bl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--a);margin-bottom:6px}
-.bc{background:var(--s);border:1px solid var(--b);border-radius:9px;padding:10px 12px;margin-bottom:6px;display:grid;grid-template-columns:1fr auto;gap:4px;position:relative;overflow:hidden}
-.bc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.bw{margin-top:10px}
+.bl2{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--a);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.bc{background:var(--s);border:1px solid var(--b2);border-radius:11px;padding:12px 13px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:4px;position:relative;overflow:hidden;transition:border-color .2s}
+.bc:hover{border-color:var(--b3)}
+.bc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .bc.Low::before{background:var(--win)}.bc.Medium::before{background:var(--warn)}.bc.High::before{background:var(--lose)}
-.bc-m{font-size:9px;color:var(--m);font-family:'JetBrains Mono',monospace;text-transform:uppercase;grid-column:1/-1;margin-bottom:2px}
-.bc-t{font-size:9px;color:var(--m2);font-family:'JetBrains Mono',monospace;text-transform:uppercase}
-.bc-p{font-size:14px;font-weight:700;color:var(--t);margin:2px 0;font-family:'Syne',sans-serif}
-.bc-r{font-size:11px;color:var(--m2);line-height:1.5}
-.bc-rt{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-.bc-o{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--a2)}
-.rbd{display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:8px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;font-weight:600}
-.Low.rbd{background:rgba(48,208,128,.1);color:var(--win);border:1px solid rgba(48,208,128,.2)}
-.Medium.rbd{background:rgba(240,192,64,.1);color:var(--warn);border:1px solid rgba(240,192,64,.2)}
-.High.rbd{background:rgba(240,80,80,.1);color:var(--lose);border:1px solid rgba(240,80,80,.2)}
-.cbar{height:2px;background:rgba(255,255,255,.05);border-radius:1px;margin-top:7px;grid-column:1/-1;overflow:hidden}
-.cf{height:100%;border-radius:1px;transition:width 1.2s}
-.Low .cf{background:var(--win)}.Medium .cf{background:var(--warn)}.High .cf{background:var(--lose)}
+.bc-m{font-size:9px;color:var(--m);font-family:'JetBrains Mono',monospace;text-transform:uppercase;grid-column:1/-1;margin-bottom:3px;letter-spacing:.5px}
+.bc-t{font-size:9px;color:var(--m3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px}
+.bc-p{font-size:15px;font-weight:800;color:var(--t);margin:3px 0;font-family:'Syne',sans-serif;letter-spacing:-.2px}
+.bc-r{font-size:11px;color:var(--m3);line-height:1.5}
+.bc-rt{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.bc-o{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--a2);font-weight:500}
+.rbd{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:8px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.Low.rbd{background:rgba(0,208,132,.1);color:var(--win);border:1px solid rgba(0,208,132,.2)}
+.Medium.rbd{background:rgba(245,200,66,.1);color:var(--warn);border:1px solid rgba(245,200,66,.2)}
+.High.rbd{background:rgba(255,69,96,.1);color:var(--lose);border:1px solid rgba(255,69,96,.2)}
+.cbar{height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:9px;grid-column:1/-1;overflow:hidden}
+.cf{height:100%;border-radius:2px;transition:width 1.4s cubic-bezier(.4,0,.2,1)}
+.Low .cf{background:linear-gradient(90deg,var(--win),#00a866)}.Medium .cf{background:linear-gradient(90deg,var(--warn),#e5a820)}.High .cf{background:linear-gradient(90deg,var(--lose),#cc2040)}
 .clbl{font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--m);text-align:right;grid-column:1/-1;margin-top:2px}
-.res-btns{display:flex;gap:4px;margin-top:5px;grid-column:1/-1}
-.rrb{font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--b);background:var(--p2);color:var(--m);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;touch-action:manipulation}
-.rrb.ww:hover,.rrb.ww:active{background:rgba(48,208,128,.1);border-color:var(--win);color:var(--win)}
-.rrb.ll:hover,.rrb.ll:active{background:rgba(240,80,80,.1);border-color:var(--lose);color:var(--lose)}
+.res-btns{display:flex;gap:5px;margin-top:7px;grid-column:1/-1}
+.rrb{font-size:9px;padding:4px 9px;border-radius:5px;border:1px solid var(--b2);background:var(--p2);color:var(--m3);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;touch-action:manipulation;font-weight:600}
+.rrb.ww:hover,.rrb.ww:active{background:rgba(0,208,132,.12);border-color:var(--win);color:var(--win)}
+.rrb.ll:hover,.rrb.ll:active{background:rgba(255,69,96,.12);border-color:var(--lose);color:var(--lose)}
 
 /* Parlay */
-.par{background:rgba(240,192,64,.05);border:1px solid rgba(240,192,64,.2);border-radius:9px;padding:10px 12px;margin-top:6px}
-.par-t{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--a);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase}
-.par-p{font-size:12px;color:var(--m2);line-height:1.7}
-.par-o{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--a2);margin-top:4px}
+.par{background:linear-gradient(135deg,rgba(64,128,255,.08),rgba(139,92,246,.05));border:1px solid rgba(64,128,255,.25);border-radius:11px;padding:12px 14px;margin-top:8px}
+.par-t{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--bl);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+.par-p{font-size:12px;color:var(--m3);line-height:1.7}
+.par-o{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--a2);margin-top:5px;font-weight:500}
 
 /* Limit card */
-.lcard{background:rgba(240,80,80,.05);border:1px solid rgba(240,80,80,.2);border-radius:10px;padding:14px;text-align:center}
-.lcard-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--lose);margin-bottom:7px}
-.crow{display:flex;gap:6px;margin-top:10px}
-.cinp{flex:1;background:var(--p);border:1px solid var(--b);border-radius:7px;padding:9px 11px;color:var(--t);font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;-webkit-appearance:none}
-.cinp:focus{border-color:var(--a)}
-.cbtn{background:var(--a);border:none;border-radius:7px;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:9px 14px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.lcard{background:linear-gradient(135deg,rgba(255,69,96,.08),rgba(255,107,53,.04));border:1px solid rgba(255,69,96,.25);border-radius:13px;padding:18px;text-align:center}
+.lcard-t{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--lose);margin-bottom:8px}
+.crow{display:flex;gap:7px;margin-top:12px}
+.cinp{flex:1;background:var(--p);border:1px solid var(--b2);border-radius:9px;padding:10px 12px;color:var(--t);font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;-webkit-appearance:none;transition:border-color .2s}
+.cinp:focus{border-color:rgba(245,200,66,.4)}
+.cbtn{background:var(--grd);border:none;border-radius:9px;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;padding:10px 16px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+
+/* Payment card */
+.pay-card{background:linear-gradient(135deg,rgba(0,208,132,.08),rgba(64,128,255,.04));border:1px solid rgba(0,208,132,.2);border-radius:13px;padding:18px;text-align:center;margin-top:8px}
+.pay-price{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;background:var(--grd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:10px 0}
+.pay-btn{background:var(--grd);border:none;border-radius:10px;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;padding:13px 28px;cursor:pointer;transition:all .2s;width:100%;margin-top:10px}
+.pay-btn:active{transform:scale(.97)}
 
 /* Typing */
-.typing{display:flex;gap:9px;margin-bottom:14px}
-.dots{display:flex;gap:4px;align-items:center;background:var(--p);border:1px solid var(--b);padding:11px 13px;border-radius:11px;border-bottom-left-radius:3px}
-.dots span{width:5px;height:5px;border-radius:50%;background:var(--m);animation:bounce 1.2s infinite}
+.typing{display:flex;gap:10px;margin-bottom:16px}
+.dots{display:flex;gap:5px;align-items:center;background:var(--p);border:1px solid var(--b2);padding:12px 16px;border-radius:13px;border-bottom-left-radius:3px}
+.dots span{width:6px;height:6px;border-radius:50%;background:var(--m);animation:bounce 1.2s infinite}
 .dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
 
 /* Input */
-.iarea{padding:10px 12px calc(10px + var(--sb));border-top:1px solid var(--b);background:var(--s);flex-shrink:0}
-.ihint{font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;margin-bottom:7px}
+.iarea{padding:10px 13px calc(10px + var(--sb));border-top:1px solid var(--b);background:var(--s);flex-shrink:0}
+.ihint{font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .ihint span{color:var(--a2)}
-.irow{display:flex;gap:7px;align-items:flex-end}
-.tinp{flex:1;background:var(--p);border:1px solid var(--b);border-radius:10px;padding:10px 13px;color:var(--t);font-family:'Outfit',sans-serif;font-size:16px;resize:none;min-height:44px;max-height:120px;line-height:1.5;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+.irow{display:flex;gap:8px;align-items:flex-end}
+.tinp{flex:1;background:var(--p);border:1px solid var(--b2);border-radius:12px;padding:11px 14px;color:var(--t);font-family:'Outfit',sans-serif;font-size:16px;resize:none;min-height:46px;max-height:130px;line-height:1.5;outline:none;transition:all .2s;-webkit-appearance:none}
 .tinp::placeholder{color:var(--m)}
-.tinp:focus{border-color:rgba(240,192,64,.35)}
-.sbtn{width:44px;height:44px;border-radius:10px;background:var(--a);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;touch-action:manipulation}
-.sbtn:active{transform:scale(.92)}.sbtn:disabled{opacity:.3;cursor:not-allowed}
-.sbtn svg{width:17px;height:17px;fill:#000}
+.tinp:focus{border-color:rgba(245,200,66,.4);background:var(--p2);box-shadow:0 0 0 3px rgba(245,200,66,.06)}
+.sbtn{width:46px;height:46px;border-radius:12px;background:var(--grd);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;touch-action:manipulation;box-shadow:0 4px 16px rgba(245,200,66,.2)}
+.sbtn:active{transform:scale(.9);box-shadow:none}.sbtn:disabled{opacity:.25;cursor:not-allowed;box-shadow:none}
+.sbtn svg{width:18px;height:18px;fill:#000}
 
 /* Bottom nav */
 .bnav{display:flex;background:var(--s);border-top:1px solid var(--b);flex-shrink:0;padding-bottom:var(--sb)}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px 7px;cursor:pointer;transition:color .2s;color:var(--m);background:none;border:none;gap:3px;font-family:'Outfit',sans-serif;touch-action:manipulation;min-width:0}
 .nb.on{color:var(--a)}
-.nb-icon{font-size:17px;line-height:1}
+.nb-icon{font-size:18px;line-height:1}
 .nb-lbl{font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
 
 /* Secondary panels */
-.sp{flex:1;overflow-y:auto;padding:14px 14px calc(14px + var(--sb));-webkit-overflow-scrolling:touch}
-.pt{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--t);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.back-btn{background:var(--p);border:1px solid var(--b);border-radius:7px;color:var(--m);font-size:12px;padding:5px 10px;cursor:pointer;font-family:'JetBrains Mono',monospace;touch-action:manipulation}
-.back-btn:active{opacity:.7}
-.sg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
-.sbox{background:var(--p);border:1px solid var(--b);border-radius:9px;padding:12px;text-align:center}
-.snum{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--a)}
-.slbl{font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-top:3px}
-.bhi{background:var(--p);border:1px solid var(--b);border-radius:9px;padding:10px 12px;margin-bottom:7px;position:relative;overflow:hidden}
-.bhr{position:absolute;right:8px;top:8px;font-size:9px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;padding:2px 6px;border-radius:4px}
-.bhr.won{background:rgba(48,208,128,.1);color:var(--win)}.bhr.lost{background:rgba(240,80,80,.1);color:var(--lose)}.bhr.pending{background:rgba(240,192,64,.1);color:var(--warn)}
+.sp{flex:1;overflow-y:auto;padding:16px 14px calc(16px + var(--sb));-webkit-overflow-scrolling:touch}
+.pt{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--t);margin-bottom:16px;letter-spacing:-.3px}
+.sg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:16px}
+.sbox{background:var(--p);border:1px solid var(--b2);border-radius:12px;padding:14px 12px;text-align:center;position:relative;overflow:hidden}
+.sbox::before{content:'';position:absolute;inset:0;opacity:.04}
+.sbox.green::before{background:var(--win)}.sbox.red::before{background:var(--lose)}.sbox.yellow::before{background:var(--a)}
+.snum{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
+.snum.yellow{color:var(--a)}.snum.green{color:var(--win)}.snum.red{color:var(--lose)}.snum.blue{color:var(--bl)}
+.slbl{font-size:9px;color:var(--m3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+.bhi{background:var(--p);border:1px solid var(--b2);border-radius:11px;padding:11px 13px;margin-bottom:8px;position:relative;overflow:hidden}
+.bhi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.bhi.won::before{background:var(--win)}.bhi.lost::before{background:var(--lose)}.bhi.pending::before{background:var(--warn)}
+.bhr{position:absolute;right:10px;top:10px;font-size:9px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;padding:2px 7px;border-radius:5px;font-weight:700}
+.bhr.won{background:rgba(0,208,132,.1);color:var(--win)}.bhr.lost{background:rgba(255,69,96,.1);color:var(--lose)}.bhr.pending{background:rgba(245,200,66,.1);color:var(--warn)}
 .bhi-m{font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;margin-bottom:3px}
-.bhi-p{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--t)}
-.bhi-c{font-size:11px;color:var(--m2);margin-top:3px}
-.bhi-a{display:flex;gap:5px;margin-top:7px}
-.bhb{font-size:10px;padding:3px 9px;border-radius:5px;border:1px solid var(--b);background:var(--p2);color:var(--m);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;touch-action:manipulation}
-.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:2px;margin:14px 0 8px}
-.pcard{background:var(--p);border:1px solid var(--b);border-radius:10px;padding:14px;margin-bottom:12px}
-.pname{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--t)}
-.pemail{font-size:12px;color:var(--m);margin-top:3px;font-family:'JetBrains Mono',monospace}
-.pbadges{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
-.ubar{background:rgba(255,255,255,.05);border-radius:4px;height:6px;overflow:hidden;margin-top:10px}.uf{height:100%;background:var(--a);border-radius:4px;transition:width .5s}
-.utxt{font-size:10px;color:var(--m);font-family:'JetBrains Mono',monospace;margin-top:4px}
-.actb{width:100%;background:var(--p);border:1px solid var(--b);border-radius:8px;color:var(--t);font-family:'Outfit',sans-serif;font-size:13px;padding:11px 14px;cursor:pointer;margin-bottom:7px;transition:all .2s;text-align:left;display:flex;align-items:center;gap:10px;touch-action:manipulation}
-.actb:active{border-color:var(--a)}
-.dngr{width:100%;background:rgba(240,80,80,.08);border:1px solid rgba(240,80,80,.2);border-radius:8px;color:var(--lose);font-family:'Outfit',sans-serif;font-size:13px;padding:11px;cursor:pointer;margin-top:6px;transition:all .2s;touch-action:manipulation}
-.dngr:active{background:rgba(240,80,80,.15)}
-.lang-toggle{display:flex;background:var(--p);border:1px solid var(--b);border-radius:7px;padding:2px;gap:2px;margin-bottom:10px;width:fit-content}
-.lt{padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--m);background:none;border:none;font-family:'JetBrains Mono',monospace;touch-action:manipulation}
-.lt.on{background:var(--a);color:#000}
+.bhi-p{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--t)}
+.bhi-c{font-size:11px;color:var(--m3);margin-top:3px}
+.bhi-a{display:flex;gap:5px;margin-top:8px}
+.bhb{font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--b2);background:var(--p2);color:var(--m3);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;font-weight:600}
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:2px;margin:16px 0 9px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--b)}
+.pcard{background:var(--p);border:1px solid var(--b2);border-radius:13px;padding:16px;margin-bottom:14px}
+.pname{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--t)}
+.pemail{font-size:12px;color:var(--m3);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.pbadges{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;align-items:center}
+.ubar-wrap{margin-top:12px}
+.ubar{background:rgba(255,255,255,.04);border-radius:4px;height:5px;overflow:hidden;border:1px solid var(--b)}
+.uf{height:100%;background:var(--grd);border-radius:4px;transition:width .6s}
+.utxt{font-size:10px;color:var(--m3);font-family:'JetBrains Mono',monospace;margin-top:5px}
+.actb{width:100%;background:var(--p);border:1px solid var(--b2);border-radius:10px;color:var(--t);font-family:'Outfit',sans-serif;font-size:13px;padding:12px 14px;cursor:pointer;margin-bottom:8px;transition:all .2s;text-align:left;display:flex;align-items:center;gap:10px;touch-action:manipulation;font-weight:500}
+.actb:hover,.actb:active{border-color:var(--a);color:var(--a)}
+.actb .ai{font-size:16px;flex-shrink:0}
+.dngr{width:100%;background:rgba(255,69,96,.07);border:1px solid rgba(255,69,96,.2);border-radius:10px;color:var(--lose);font-family:'Outfit',sans-serif;font-size:13px;padding:12px;cursor:pointer;margin-top:8px;transition:all .2s;font-weight:600}
+.dngr:active{background:rgba(255,69,96,.15)}
+.promo-section{padding-top:14px;border-top:1px solid var(--b);margin-top:6px}
 .at{width:100%;border-collapse:collapse;font-size:11px}
-.at th{text-align:left;padding:7px 8px;color:var(--m);font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--b)}
-.at td{padding:7px 8px;border-bottom:1px solid rgba(28,37,53,.5);color:var(--t)}
-.at tr:hover td{background:var(--p)}
-.tbtn{background:var(--p2);border:1px solid var(--b);border-radius:5px;color:var(--a);font-size:10px;padding:2px 7px;cursor:pointer;font-family:'JetBrains Mono',monospace;touch-action:manipulation}
-.tbtn.red{color:var(--lose)}.tbtn.grn{color:var(--win)}
+.at th{text-align:left;padding:8px 9px;color:var(--m);font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--b)}
+.at td{padding:8px 9px;border-bottom:1px solid rgba(22,32,48,.7);color:var(--t);vertical-align:middle}
+.at tr:hover td{background:rgba(255,255,255,.01)}
+.tbtn{background:var(--p2);border:1px solid var(--b2);border-radius:6px;color:var(--a);font-size:9px;padding:3px 8px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s;touch-action:manipulation;font-weight:600}
+.tbtn:hover{border-color:var(--a)}.tbtn.red{color:var(--lose)}.tbtn.red:hover{border-color:var(--lose)}.tbtn.grn{color:var(--win)}.tbtn.grn:hover{border-color:var(--win)}
+.hi{padding:9px 11px;border-radius:9px;cursor:pointer;margin-bottom:3px;transition:all .15s;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--m3);touch-action:manipulation}
+.hi:hover,.hi:active{background:var(--p);color:var(--t)}
+.hi.on{background:var(--p2);color:var(--t);border-left:2px solid var(--a)}
+.hi-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.hi-x{opacity:0;background:none;border:none;color:var(--m);cursor:pointer;font-size:13px;padding:3px 5px;border-radius:4px;flex-shrink:0;transition:color .15s}
+.hi:hover .hi-x{opacity:1}.hi-x:hover{color:var(--lose)}
+.hot-item{background:var(--p);border:1px solid var(--b2);border-radius:9px;padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hot-rank{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--a);width:24px;flex-shrink:0}
+.hot-query{flex:1}
+.hot-query-text{font-size:12px;font-weight:600;color:var(--t)}
+.hot-query-sport{font-size:10px;color:var(--m3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.hot-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--a);background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.2);padding:2px 8px;border-radius:5px;font-weight:600}
+.toggle-wrap{display:flex;align-items:center;justify-content:space-between;background:var(--p);border:1px solid var(--b2);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.toggle-label{font-size:13px;font-weight:600;color:var(--t)}
+.toggle-sub{font-size:11px;color:var(--m3);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--b2);border-radius:12px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--win)}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:9px;top:3px;left:3px;transition:left .2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.toggle.on::after{left:23px}
+.pay-pending{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:9px;padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.badge-v{background:rgba(0,208,132,.1);border:1px solid rgba(0,208,132,.2);border-radius:5px;padding:2px 8px;font-size:9px;color:var(--win);font-family:'JetBrains Mono',monospace;font-weight:700}
+.badge-u{background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.2);border-radius:5px;padding:2px 8px;font-size:9px;color:var(--warn);font-family:'JetBrains Mono',monospace;font-weight:700}
 
-/* History items */
-.hi{padding:8px 10px;border-radius:7px;cursor:pointer;margin-bottom:2px;transition:background .15s;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--m2);touch-action:manipulation}
-.hi:active,.hi:hover{background:var(--p);color:var(--t)}
-.hi.on{background:var(--p2);color:var(--t)}
-.hi-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hi-x{opacity:0;background:none;border:none;color:var(--m);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:3px;flex-shrink:0}
-.hi:hover .hi-x,.hi:active .hi-x{opacity:1}
-
-/* Terms */
-.terms-content{font-size:13px;color:var(--m2);line-height:1.8}
-.terms-content h3{color:var(--a);font-family:'Syne',sans-serif;margin:16px 0 6px;font-size:15px}
-.terms-content p{margin-bottom:10px}
-
-/* Desktop responsive */
+/* Desktop sidebar */
 @media(min-width:768px){
   .app.on{flex-direction:row}
-  .sidebar{display:flex;width:230px;min-width:230px;background:var(--s);border-right:1px solid var(--b);flex-direction:column;height:100vh;height:100dvh;overflow:hidden;flex-shrink:0}
+  .sidebar{display:flex;width:232px;min-width:232px;background:var(--s);border-right:1px solid var(--b);flex-direction:column;height:100vh;height:100dvh;overflow:hidden;flex-shrink:0}
   .main-col{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh;height:100dvh}
-  .bnav{display:none}
-  .topbar{display:none}
+  .bnav{display:none}.topbar{display:none}
   .stab{padding:12px 14px;font-size:12px}
-  .msgs{padding:18px 22px 10px}
-  .iarea{padding:12px 22px calc(12px + var(--sb))}
-  .sp{padding:18px 22px}
+  .msgs,.sp{padding-left:22px;padding-right:22px}
   .bbl{font-size:14px}
-  .sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--b)}
-  .sb-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px}
-  .sb-user{font-size:11px;color:var(--m);margin-top:4px;display:flex;align-items:center;gap:6px}
-  .new-btn{margin:8px 10px 0;background:var(--a);border:none;border-radius:8px;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:10px;cursor:pointer;width:calc(100% - 20px);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
-  .new-btn:hover{background:#ffd060}
-  .sb-sec{padding:8px 14px 4px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:2px}
-  .sb-hist{flex:1;overflow-y:auto;padding:0 8px}
-  .sb-hist::-webkit-scrollbar{width:3px}.sb-hist::-webkit-scrollbar-thumb{background:var(--b2)}
-  .sb-nav{padding:6px 8px}
-  .snb{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--m2);background:none;border:none;font-family:'Outfit',sans-serif;transition:background .15s;touch-action:manipulation}
-  .snb:hover{background:var(--p);color:var(--t)}.snb.on{background:var(--p2);color:var(--a)}
-  .sb-bot{padding:10px 14px;border-top:1px solid var(--b)}
-  .live-dot{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--a3);margin-bottom:4px}
-  .disc-txt{font-size:9px;color:var(--m);line-height:1.5}
+  .sb-head{padding:18px 16px 12px;border-bottom:1px solid var(--b)}
+  .sb-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px}
+  .sb-logo .g{background:var(--grd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .sb-user{font-size:11px;color:var(--m3);margin-top:5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .new-btn{margin:10px 10px 0;background:var(--grd);border:none;border-radius:10px;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;padding:11px;cursor:pointer;width:calc(100% - 20px);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(245,200,66,.15)}
+  .new-btn:hover{box-shadow:0 6px 20px rgba(245,200,66,.25)}
+  .sb-sec{padding:10px 16px 4px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:2px}
+  .sb-hist{flex:1;overflow-y:auto;padding:0 9px}
+  .sb-nav{padding:6px 9px}
+  .snb{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--m3);background:none;border:none;font-family:'Outfit',sans-serif;transition:all .15s;font-weight:500}
+  .snb:hover{background:var(--p);color:var(--t)}.snb.on{background:var(--p2);color:var(--a);font-weight:600}
+  .sb-bot{padding:12px 16px;border-top:1px solid var(--b)}
+  .live-dot{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--win);margin-bottom:5px}
+  .disc-txt{font-size:9px;color:var(--m);line-height:1.6}
 }
-@media(max-width:767px){
-  .sidebar{display:none}
-  .main-col{flex:1;display:flex;flex-direction:column;overflow:hidden}
-}
-@media(min-width:1024px){
-  .sidebar{width:250px;min-width:250px}
-  .msgs{padding:22px 28px 12px}
-  .iarea{padding:14px 28px calc(14px + var(--sb))}
-}
+@media(max-width:767px){.sidebar{display:none}.main-col{flex:1;display:flex;flex-direction:column;overflow:hidden}}
+@media(min-width:1024px){.sidebar{width:250px;min-width:250px}}
+@media(min-width:1280px){.msgs,.sp{padding-left:28px;padding-right:28px}.iarea{padding-left:28px;padding-right:28px}}
 </style>
 </head>
 <body>
 
 <!-- AUTH -->
 <div class="auth" id="auth">
-  <div class="auth-box">
-    <div class="auth-logo"><span class="logo-g">Odds</span><span class="logo-w">GPT</span></div>
-    <div class="auth-tag">AI Betting Analyst</div>
-    <div id="verifyBanner" class="verify-banner">📧 Please check your email to verify your account / Kontrollo email-in për të verifikuar llogarinë.</div>
-    <div class="tabs2">
-      <button class="t2 on" onclick="sAuth('login')">Login</button>
-      <button class="t2" onclick="sAuth('reg')">Register</button>
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="logo"><span class="logo-g">Odds</span><span class="logo-w">GPT</span></div>
+      <div class="tagline">AI · Sports Betting Analyst</div>
     </div>
-    <div id="loginF">
-      <div class="fd"><label>Username</label><input id="lU" type="text" placeholder="username" autocomplete="username" inputmode="text"/></div>
-      <div class="fd"><label>Password</label><input id="lP" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      <button class="abtn" onclick="doLogin()">Login</button>
-      <div class="alink"><a onclick="showForgot()">Forgot password? / Harrove fjalëkalimin?</a></div>
+    <div class="auth-box">
+      <div id="vBanner" class="vbanner">📧 Check your email to verify your account · Kontrollo email-in tënd</div>
+      <div class="tabs2">
+        <button class="t2 on" onclick="sAuth('login')">Login</button>
+        <button class="t2" onclick="sAuth('reg')">Register</button>
+      </div>
+      <div id="loginF">
+        <div class="fd"><label>Username</label><input id="lU" type="text" placeholder="your username" autocomplete="username" inputmode="text"/></div>
+        <div class="fd"><label>Password</label><input id="lP" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <button class="abtn" onclick="doLogin()">Login</button>
+        <div class="alink"><a onclick="showForgot()">Forgot password? · Harrove fjalëkalimin?</a></div>
+      </div>
+      <div id="regF" style="display:none">
+        <div class="fd"><label>Username</label><input id="rU" type="text" placeholder="choose a username" autocomplete="username" inputmode="text"/></div>
+        <div class="fd"><label>Email</label><input id="rE" type="email" placeholder="your@email.com" autocomplete="email" inputmode="email"/></div>
+        <div class="fd"><label>Password</label><input id="rP" type="password" placeholder="minimum 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReg()"/></div>
+        <button class="abtn" onclick="doReg()">Create Account · Krijo Llogari</button>
+      </div>
+      <div class="aerr" id="aErr"></div>
+      <div class="aok"  id="aOk"></div>
+      <div class="terms-note">By signing up you agree to our <a onclick="showTerms()">Terms & Privacy Policy</a>.<br>Duke u regjistruar pranoni <a onclick="showTerms()">Kushtet & Privatësinë</a>.</div>
     </div>
-    <div id="regF" style="display:none">
-      <div class="fd"><label>Username</label><input id="rU" type="text" placeholder="choose username" autocomplete="username" inputmode="text"/></div>
-      <div class="fd"><label>Email</label><input id="rE" type="email" placeholder="your@email.com" autocomplete="email" inputmode="email"/></div>
-      <div class="fd"><label>Password</label><input id="rP" type="password" placeholder="min 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReg()"/></div>
-      <button class="abtn" onclick="doReg()">Create Account / Krijo Llogari</button>
-    </div>
-    <div class="aerr" id="aErr"></div>
-    <div class="aok"  id="aOk"></div>
-    <div class="terms-note">By registering you agree to our <a onclick="showTerms()">Terms & Privacy Policy</a>.<br>Duke u regjistruar pranoni <a onclick="showTerms()">Kushtet & Privatësinë</a>.</div>
   </div>
 </div>
 
 <!-- FORGOT -->
 <div class="ov center" id="forgotOv">
-  <div class="mbox" style="border-radius:14px;padding:22px 20px">
+  <div class="mbox" style="border-radius:16px;padding:24px 20px">
     <div class="mttl">Reset Password <button class="xb" onclick="closeForgot()">✕</button></div>
     <div class="fd"><label>Email</label><input id="fE" type="email" placeholder="your@email.com" inputmode="email"/></div>
     <button class="abtn" onclick="doForgot()">Send Reset Link</button>
@@ -333,25 +366,30 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 <!-- TERMS -->
 <div class="ov" id="termsOv">
   <div class="mbox">
-    <div class="mttl">Terms & Privacy / Kushtet & Privatësia <button class="xb" onclick="closeTerms()">✕</button></div>
-    <div class="terms-content">
-      <h3>⚠️ Disclaimer / Mohim Përgjegjësie</h3>
-      <p><strong>OddsGPT is for entertainment and informational purposes ONLY.</strong> / <strong>OddsGPT është VETËM për argëtim dhe informacion.</strong></p>
-      <p>Sports betting involves significant financial risk. You may lose your entire stake. Never bet more than you can afford to lose. / Basti në sport përfshin rrezik financiar të madh. Mund të humbësh gjithë shumën. Kurrë mos basto më shumë de sa mund të përballosh ta humbasësh.</p>
-      <p>OddsGPT does not guarantee any outcomes. All predictions are probabilistic and based on available data. / OddsGPT nuk garanton asnjë rezultat. Të gjitha parashikimet janë probabilistike.</p>
-      <h3>📋 Terms of Use / Kushtet e Përdorimit</h3>
-      <p>1. You must be 18+ years old to use this service. / Duhet të jesh 18+ vjeç për të përdorur këtë shërbim.<br>
-      2. One account per person. / Një llogari për person.<br>
-      3. No commercial redistribution of predictions. / Pa rishpërndarje komerciale të parashikimeve.<br>
-      4. We reserve the right to ban accounts that abuse the service. / Rezervojmë të drejtën të bllokojmë llogaritë abuzive.</p>
-      <h3>🔒 Privacy / Privatësia</h3>
-      <p>We store your username, email, and chat history to provide the service. We do not sell your data. / Ruajmë emrin, email-in dhe historikun e bisedave për të ofruar shërbimin. Nuk shesim të dhënat tuaja.</p>
-      <h3>🎰 Responsible Gambling / Basti i Përgjegjshëm</h3>
-      <p>If you have a gambling problem, please seek help: / Nëse keni problem me bastit, kërkoni ndihmë:<br>
-      🇬🇧 <strong>GamCare:</strong> gamcare.org.uk | 0808 8020 133<br>
-      🌍 <strong>BeGambleAware:</strong> begambleaware.org</p>
+    <div class="drag-bar"></div>
+    <div class="mttl">Terms & Privacy <button class="xb" onclick="closeTerms()">✕</button></div>
+    <div style="font-size:13px;color:var(--m3);line-height:1.8">
+      <h3 style="color:var(--lose);font-family:Syne,sans-serif;margin-bottom:8px">⚠️ DISCLAIMER / MOHIM PËRGJEGJËSIE</h3>
+      <p style="background:rgba(255,69,96,.08);border:1px solid rgba(255,69,96,.2);border-radius:8px;padding:12px;margin-bottom:14px;color:#ff9090;font-weight:600">OddsGPT is for ENTERTAINMENT and INFORMATIONAL purposes ONLY. This is NOT financial or betting advice. Sports betting involves significant financial risk and you may lose your entire stake.</p>
+      <p>OddsGPT është VETËM për argëtim dhe informacion. Kjo NUK është këshillë financiare apo bastesh. Basti sportiv përfshin rrezik të madh financiar.</p>
+      <h3 style="color:var(--a);font-family:Syne,sans-serif;margin:14px 0 7px">📋 Terms of Use</h3>
+      <p>1. You must be 18+ years old to use this service.<br>2. One account per person. Account sharing is prohibited.<br>3. We reserve the right to suspend accounts that abuse the service.<br>4. Predictions are probabilistic — no outcome is guaranteed.</p>
+      <h3 style="color:var(--a);font-family:Syne,sans-serif;margin:14px 0 7px">🔒 Privacy</h3>
+      <p>We store your username, email and chat history solely to provide the service. We never sell your personal data.</p>
+      <h3 style="color:var(--a);font-family:Syne,sans-serif;margin:14px 0 7px">🎰 Responsible Gambling</h3>
+      <p>If gambling is causing you problems, please seek help:<br>🇬🇧 <strong>GamCare:</strong> gamcare.org.uk | 0808 802 0133<br>🌍 <strong>BeGambleAware:</strong> begambleaware.org</p>
     </div>
-    <button class="abtn" onclick="closeTerms()" style="margin-top:14px">I Understand / Kuptoj</button>
+    <button class="abtn" onclick="closeTerms()" style="margin-top:16px">I Understand / Kuptoj</button>
+  </div>
+</div>
+
+<!-- HISTORY MODAL (mobile) -->
+<div class="ov" id="histOv">
+  <div class="mbox">
+    <div class="drag-bar"></div>
+    <div class="mttl">Chat History <button class="xb" onclick="closeHist()">✕</button></div>
+    <button style="width:100%;background:var(--grd);border:none;border-radius:10px;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;padding:11px;cursor:pointer;margin-bottom:12px" onclick="newChat();gChat();closeHist()">+ New Analysis</button>
+    <div id="histMob"></div>
   </div>
 </div>
 
@@ -361,12 +399,12 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   <!-- Desktop sidebar -->
   <div class="sidebar">
     <div class="sb-head">
-      <div class="sb-logo"><span class="logo-g">Odds</span><span class="logo-w">GPT</span></div>
+      <div class="sb-logo"><span class="g">Odds</span><span style="color:var(--t)">GPT</span></div>
       <div class="sb-user"><span id="sbU">User</span><span id="sbR" class="rb rb-free">Free</span></div>
     </div>
-    <div style="padding:6px 10px 0">
+    <div style="padding:8px 10px 0">
       <button class="new-btn" onclick="newChat();gChat()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Analysis
       </button>
     </div>
@@ -380,52 +418,49 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
     <div class="sb-sec">Recent Chats</div>
     <div class="sb-hist" id="sbHist"></div>
     <div class="sb-bot">
-      <div class="live-dot"><span class="pulse"></span>Live Internet</div>
-      <div class="disc-txt">⚠ For entertainment only.<br>Bet responsibly. 18+</div>
+      <div class="live-dot"><span class="pulse"></span>Live Internet Connected</div>
+      <div class="disc-txt">⚠ For entertainment only · 18+<br>Vetëm për argëtim · 18+</div>
     </div>
   </div>
 
   <!-- Main column -->
   <div class="main-col">
-
     <!-- Mobile topbar -->
     <div class="topbar">
-      <div class="tb-logo"><span class="logo-g">Odds</span><span class="logo-w">GPT</span></div>
+      <div class="tb-logo"><span class="g">Odds</span><span class="w">GPT</span></div>
       <div class="tb-right">
         <span id="mbR" class="rb rb-free">FREE</span>
-        <div class="ib" onclick="gPanel('prof')">👤</div>
+        <div class="ib" onclick="showHist()" title="History">📋</div>
+        <div class="ib" onclick="gPanel('prof')" title="Profile">👤</div>
       </div>
     </div>
 
-    <!-- Sport tabs — always visible -->
+    <!-- Sport tabs -->
     <div class="tabs-wrap">
-      <div class="tabs-inner" id="tabsInner">
-        <button class="stab on" data-sport="all"               onclick="sTab(this)">🎯 All</button>
-        <button class="stab"    data-sport="football"          onclick="sTab(this)">⚽ Football</button>
-        <button class="stab"    data-sport="basketball"        onclick="sTab(this)">🏀 Basketball</button>
-        <button class="stab"    data-sport="tennis"            onclick="sTab(this)">🎾 Tennis</button>
-        <button class="stab"    data-sport="hockey"            onclick="sTab(this)">🏒 Hockey</button>
-        <button class="stab"    data-sport="baseball"          onclick="sTab(this)">⚾ Baseball</button>
-        <button class="stab"    data-sport="american football" onclick="sTab(this)">🏈 NFL</button>
-        <button class="stab"    data-sport="ufc"               onclick="sTab(this)">🥊 UFC/MMA</button>
+      <div class="tabs-inner">
+        <button class="stab on" data-sport="all"               onclick="sTab(this)"><span class="ti">🎯</span>All</button>
+        <button class="stab"    data-sport="football"          onclick="sTab(this)"><span class="ti">⚽</span>Football</button>
+        <button class="stab"    data-sport="basketball"        onclick="sTab(this)"><span class="ti">🏀</span>Basketball</button>
+        <button class="stab"    data-sport="tennis"            onclick="sTab(this)"><span class="ti">🎾</span>Tennis</button>
+        <button class="stab"    data-sport="hockey"            onclick="sTab(this)"><span class="ti">🏒</span>Hockey</button>
+        <button class="stab"    data-sport="baseball"          onclick="sTab(this)"><span class="ti">⚾</span>Baseball</button>
+        <button class="stab"    data-sport="american football" onclick="sTab(this)"><span class="ti">🏈</span>NFL</button>
+        <button class="stab"    data-sport="ufc"               onclick="sTab(this)"><span class="ti">🥊</span>UFC/MMA</button>
       </div>
     </div>
 
     <!-- Body area -->
     <div class="body-area">
+      <!-- Disclaimer -->
+      <div class="disc-bar">⚠ <strong>Entertainment only · Vetëm për argëtim</strong> — Not financial advice · 18+ only &nbsp;·&nbsp; <a onclick="showTerms()">Terms & Privacy</a></div>
 
-      <!-- DISCLAIMER BANNER -->
-      <div class="disc-banner">
-        ⚠️ <strong>For entertainment only / Vetëm për argëtim</strong> — Not financial advice. Bet responsibly. 18+ only. &nbsp;<span onclick="showTerms()">Terms & Privacy</span>
-      </div>
-
-      <!-- CHAT PANEL -->
+      <!-- CHAT -->
       <div class="panel on" id="chatP">
         <div class="msgs" id="msgs"></div>
         <div class="iarea">
-          <div class="ihint">e.g. <span>football - Arsenal vs Chelsea</span> · or paste multiple games</div>
+          <div class="ihint">💡 e.g. <span>football - Arsenal vs Chelsea</span> · or paste multiple games</div>
           <div class="irow">
-            <textarea id="inp" class="tinp" placeholder="Type a match..." rows="1" onkeydown="hKey(event)" oninput="aRes(this)"></textarea>
+            <textarea id="inp" class="tinp" placeholder="Type a match to analyse..." rows="1" onkeydown="hKey(event)" oninput="aRes(this)"></textarea>
             <button class="sbtn" id="sBtn" onclick="sendMsg()">
               <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -433,142 +468,74 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
         </div>
       </div>
 
-      <!-- DASHBOARD PANEL -->
-      <div class="panel" id="dashP"><div class="sp" id="dashC">Loading...</div></div>
-
-      <!-- PROFILE PANEL -->
-      <div class="panel" id="profP"><div class="sp" id="profC">Loading...</div></div>
-
-      <!-- STAFF PANEL -->
-      <div class="panel" id="staffP"><div class="sp" id="staffC">Loading...</div></div>
-
-      <!-- OWNER PANEL -->
-      <div class="panel" id="ownerP"><div class="sp" id="ownerC">Loading...</div></div>
+      <!-- DASHBOARD -->
+      <div class="panel" id="dashP"><div class="sp" id="dashC"></div></div>
+      <!-- PROFILE -->
+      <div class="panel" id="profP"><div class="sp" id="profC"></div></div>
+      <!-- STAFF -->
+      <div class="panel" id="staffP"><div class="sp" id="staffC"></div></div>
+      <!-- OWNER -->
+      <div class="panel" id="ownerP"><div class="sp" id="ownerC"></div></div>
 
     </div>
 
     <!-- Bottom nav -->
     <div class="bnav">
-      <button class="nb on" id="nb-chat"  onclick="gChat()"><span class="nb-icon">💬</span><span class="nb-lbl">Chat</span></button>
-      <button class="nb"    id="nb-hist"  onclick="showHist()"><span class="nb-icon">📋</span><span class="nb-lbl">History</span></button>
-      <button class="nb"    id="nb-dash"  onclick="gPanel('dash')"><span class="nb-icon">📊</span><span class="nb-lbl">Stats</span></button>
-      <button class="nb"    id="nb-prof"  onclick="gPanel('prof')"><span class="nb-icon">👤</span><span class="nb-lbl">Profile</span></button>
+      <button class="nb on" id="nb-chat" onclick="gChat()"><span class="nb-icon">💬</span><span class="nb-lbl">Chat</span></button>
+      <button class="nb"    id="nb-hist" onclick="showHist()"><span class="nb-icon">📋</span><span class="nb-lbl">History</span></button>
+      <button class="nb"    id="nb-dash" onclick="gPanel('dash')"><span class="nb-icon">📊</span><span class="nb-lbl">Stats</span></button>
+      <button class="nb"    id="nb-prof" onclick="gPanel('prof')"><span class="nb-icon">👤</span><span class="nb-lbl">Profile</span></button>
     </div>
   </div>
 </div>
 
-<!-- HISTORY MODAL (mobile) -->
-<div class="ov" id="histOv">
-  <div class="mbox">
-    <div class="mttl">📋 Chat History <button class="xb" onclick="closeHist()">✕</button></div>
-    <button style="width:100%;background:var(--a);border:none;border-radius:8px;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:10px;cursor:pointer;margin-bottom:10px" onclick="newChat();gChat();closeHist()">+ New Analysis</button>
-    <div id="histMob"></div>
-  </div>
-</div>
-
 <script>
-// ── STATE ──────────────────────────────────────────────────────────
-let tok='',uname='',role='free',sessId=null,sport='all',loading=false,dailyUsed=0,lang='en';
+let tok='',uname='',role='free',sessId=null,sport='all',loading=false,dailyUsed=0;
 const ICONS={football:'⚽',basketball:'🏀',tennis:'🎾',hockey:'🏒',baseball:'⚾','american football':'🏈',ufc:'🥊',all:'🎯'};
+const ROLE_LBL={free:'Free',premium:'⭐ PRO',operator:'🔧 Staff',owner:'👑 Owner'};
+const ROLE_CLS={free:'rb-free',premium:'rb-premium',operator:'rb-operator',owner:'rb-owner'};
 
-// Device fingerprint for account limiting
-function getDeviceId(){
+function devId(){
   let id=localStorage.getItem('og_dev');
-  if(!id){
-    id=btoa([navigator.userAgent,screen.width,screen.height,Intl.DateTimeFormat().resolvedOptions().timeZone,navigator.language].join('|')).replace(/=/g,'').slice(0,32);
-    localStorage.setItem('og_dev',id);
-  }
+  if(!id){id=btoa([navigator.userAgent,screen.width,screen.height,Intl.DateTimeFormat().resolvedOptions().timeZone,navigator.language].join('|')).replace(/[^a-zA-Z0-9]/g,'').slice(0,32);localStorage.setItem('og_dev',id);}
   return id;
 }
-
 function load(){tok=localStorage.getItem('og_tok')||'';uname=localStorage.getItem('og_u')||'';role=localStorage.getItem('og_r')||'free';}
 function save(){localStorage.setItem('og_tok',tok);localStorage.setItem('og_u',uname);localStorage.setItem('og_r',role);}
 
-(async()=>{
-  load();
-  if(tok){
-    try{
-      const me=await api('/api/auth/me');
-      uname=me.username;role=me.role;dailyUsed=me.daily_used;save();
-      await boot();return;
-    }catch(e){}
-  }
-  showAuth();
-})();
+(async()=>{load();if(tok){try{const me=await api('/api/auth/me');uname=me.username;role=me.role;dailyUsed=me.daily_used;save();await boot();return;}catch(e){}}showAuth();})();
 
 async function boot(){
   document.getElementById('auth').style.display='none';
   document.getElementById('app').classList.add('on');
-  updateUI();
-  await loadSessions();
-  await newChat();
-  gChat();
+  updateUI();await loadSessions();await newChat();gChat();
 }
-
-function showAuth(){
-  document.getElementById('auth').style.display='flex';
-  document.getElementById('app').classList.remove('on');
-}
-
+function showAuth(){document.getElementById('auth').style.display='flex';document.getElementById('app').classList.remove('on');}
 function updateUI(){
-  const roleLbl={free:'Free',premium:'⭐ PRO',operator:'🔧 Staff',owner:'👑 Owner'};
-  const roleClass={free:'rb-free',premium:'rb-premium',operator:'rb-operator',owner:'rb-owner'};
-  [document.getElementById('sbR'),document.getElementById('mbR')].forEach(el=>{
-    if(!el)return;
-    el.textContent=role==='free'?`${Math.max(0,3-dailyUsed)}/3 FREE`:roleLbl[role]||role;
-    el.className='rb '+(roleClass[role]||'rb-free');
-  });
-  const sbU=document.getElementById('sbU');if(sbU)sbU.textContent=uname;
-  // Show staff/owner nav
-  ['sn-staff','sn-owner'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=(role==='owner'||role==='operator')?'':'none';});
-  if(document.getElementById('sn-owner'))document.getElementById('sn-owner').style.display=role==='owner'?'':'none';
+  const lbl=role==='free'?`${Math.max(0,3-dailyUsed)}/3 FREE`:ROLE_LBL[role]||role;
+  const cls=ROLE_CLS[role]||'rb-free';
+  [document.getElementById('sbR'),document.getElementById('mbR')].forEach(el=>{if(el){el.textContent=lbl;el.className='rb '+cls;}});
+  const su=document.getElementById('sbU');if(su)su.textContent=uname;
+  const showStaff=role==='operator'||role==='owner';
+  const showOwner=role==='owner';
+  ['sn-staff'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=showStaff?'':'none';});
+  ['sn-owner'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=showOwner?'':'none';});
 }
-
-// ── AUTH ────────────────────────────────────────────────────────────
-function sAuth(m){
-  document.getElementById('loginF').style.display=m==='login'?'':'none';
-  document.getElementById('regF').style.display=m==='reg'?'':'none';
-  document.querySelectorAll('.t2').forEach((t,i)=>t.classList.toggle('on',(i===0)===(m==='login')));
-  document.getElementById('aErr').style.display='none';
-  document.getElementById('aOk').style.display='none';
-}
-
+function sAuth(m){document.getElementById('loginF').style.display=m==='login'?'':'none';document.getElementById('regF').style.display=m==='reg'?'':'none';document.querySelectorAll('.t2').forEach((t,i)=>t.classList.toggle('on',(i===0)===(m==='login')));document.getElementById('aErr').style.display='none';document.getElementById('aOk').style.display='none';}
 async function doLogin(){
-  const u=V('lU'),p=V('lP');
-  if(!u||!p)return aerr('Fill in all fields');
-  try{
-    const r=await api('/api/auth/login','POST',{username:u,password:p,device_id:getDeviceId()});
-    tok=r.token;uname=r.username;role=r.role;save();
-    if(!r.is_verified&&r.role==='free'){
-      document.getElementById('verifyBanner').style.display='block';
-    }
-    await boot();
-  }catch(e){aerr(e.message);}
+  const u=V('lU'),p=V('lP');if(!u||!p)return aerr('Fill in all fields / Plotëso të gjitha fushat');
+  try{const r=await api('/api/auth/login','POST',{username:u,password:p,device_id:devId()});tok=r.token;uname=r.username;role=r.role;save();if(!r.is_verified){document.getElementById('vBanner').style.display='block';}await boot();}catch(e){aerr(e.message);}
 }
-
 async function doReg(){
-  const u=V('rU'),e=V('rE'),p=V('rP');
-  if(!u||!e||!p)return aerr('Fill in all fields');
-  try{
-    const r=await api('/api/auth/register','POST',{username:u,email:e,password:p,device_id:getDeviceId()});
-    tok=r.token;uname=r.username;role=r.role;save();
-    if(r.email_sent){
-      document.getElementById('verifyBanner').style.display='block';
-      aok('Account created! Check your email to verify. / Llogaria u krijua! Kontrollo email-in.');
-      setTimeout(()=>boot(),2000);
-    } else { await boot(); }
-  }catch(e){aerr(e.message);}
+  const u=V('rU'),e=V('rE'),p=V('rP');if(!u||!e||!p)return aerr('Fill in all fields / Plotëso të gjitha fushat');
+  try{const r=await api('/api/auth/register','POST',{username:u,email:e,password:p,device_id:devId()});tok=r.token;uname=r.username;role=r.role;save();if(r.email_sent){document.getElementById('vBanner').style.display='block';aok('Account created! Check your email. · Llogaria u krijua! Kontrollo email-in.');setTimeout(boot,2500);}else{await boot();}}catch(e){aerr(e.message);}
 }
-
 function showForgot(){document.getElementById('forgotOv').classList.add('show');}
 function closeForgot(){document.getElementById('forgotOv').classList.remove('show');}
 async function doForgot(){
   const e=V('fE');if(!e)return;
-  try{
-    await api('/api/auth/forgot','POST',{email:e});
-    document.getElementById('fOk').textContent='Reset link sent / Linku u dërgua';
-    document.getElementById('fOk').style.display='block';
-  }catch(e){document.getElementById('fErr').textContent=e.message;document.getElementById('fErr').style.display='block';}
+  try{await api('/api/auth/forgot','POST',{email:e});document.getElementById('fOk').textContent='✓ Reset link sent / Linku u dërgua';document.getElementById('fOk').style.display='block';}
+  catch(e){document.getElementById('fErr').textContent=e.message;document.getElementById('fErr').style.display='block';}
 }
 function showTerms(){document.getElementById('termsOv').classList.add('show');}
 function closeTerms(){document.getElementById('termsOv').classList.remove('show');}
@@ -576,442 +543,515 @@ function logout(){localStorage.clear();tok='';uname='';role='free';showAuth();}
 function aerr(m){const e=document.getElementById('aErr');e.textContent=m;e.style.display='block';}
 function aok(m){const e=document.getElementById('aOk');e.textContent=m;e.style.display='block';}
 
-// ── PANELS ──────────────────────────────────────────────────────────
-function gChat(){
-  setP('chatP');setNb('chat');setSN('chat');
-}
-function gPanel(n){
-  const mp={dash:'dashP',prof:'profP',staff:'staffP',owner:'ownerP'};
-  setP(mp[n]||'chatP');setNb(n);setSN(n);
-  if(n==='dash')loadDash();
-  if(n==='prof')loadProf();
-  if(n==='staff')loadStaff();
-  if(n==='owner')loadOwner();
-}
+// Navigation
+function gChat(){setP('chatP');setNb('chat');setSN('chat');}
+function gPanel(n){const mp={dash:'dashP',prof:'profP',staff:'staffP',owner:'ownerP'};setP(mp[n]||'chatP');setNb(n);setSN(n);if(n==='dash')loadDash();if(n==='prof')loadProf();if(n==='staff')loadStaff();if(n==='owner')loadOwner();}
 function setP(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));const el=document.getElementById(id);if(el)el.classList.add('on');}
 function setNb(n){document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));const el=document.getElementById('nb-'+n);if(el)el.classList.add('on');}
 function setSN(n){document.querySelectorAll('.snb').forEach(b=>b.classList.remove('on'));const el=document.getElementById('sn-'+n);if(el)el.classList.add('on');}
 function showHist(){renderHistMob();document.getElementById('histOv').classList.add('show');}
 function closeHist(){document.getElementById('histOv').classList.remove('show');}
 
-// ── TABS ────────────────────────────────────────────────────────────
-function sTab(btn){
-  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('on'));
-  btn.classList.add('on');sport=btn.dataset.sport;
-  gChat();loadHotGames();
-}
+// Sport tabs
+function sTab(btn){document.querySelectorAll('.stab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');sport=btn.dataset.sport;gChat();loadHotGames();}
 
-// ── SESSIONS ────────────────────────────────────────────────────────
-async function loadSessions(){
-  try{const d=await api('/api/sessions');renderHist(d.sessions||[]);}catch(e){}
-}
-
+// Sessions
+async function loadSessions(){try{const d=await api('/api/sessions');renderHist(d.sessions||[]);}catch(e){}}
 function renderHist(sessions){
-  const targets=[document.getElementById('sbHist')];
-  targets.forEach(list=>{
-    if(!list)return;
-    list.innerHTML=sessions.length?'':'<div style="color:var(--m);font-size:12px;padding:8px">No chats yet</div>';
+  const lists=[document.getElementById('sbHist')].filter(Boolean);
+  lists.forEach(list=>{
+    list.innerHTML=sessions.length?'':'<div style="color:var(--m);font-size:12px;padding:10px">No chats yet</div>';
     sessions.forEach(s=>{
-      const d=document.createElement('div');
-      d.className='hi'+(s.id===sessId?' on':'');d.dataset.id=s.id;
-      d.innerHTML=`<span>${ICONS[s.sport_tab]||'🎯'}</span><span class="hi-title">${esc(s.title)}</span><button class="hi-x" onclick="delSess(event,'${s.id}')">✕</button>`;
+      const d=document.createElement('div');d.className='hi'+(s.id===sessId?' on':'');d.dataset.id=s.id;
+      d.innerHTML=`<span style="font-size:14px">${ICONS[s.sport_tab]||'🎯'}</span><span class="hi-title">${esc(s.title)}</span><button class="hi-x" onclick="delSess(event,'${s.id}')">✕</button>`;
       d.onclick=e=>{if(!e.target.classList.contains('hi-x')){loadSess(s.id);gChat();closeHist();}};
       list.appendChild(d);
     });
   });
 }
-
-function renderHistMob(){
-  const list=document.getElementById('histMob');if(!list)return;
-  const sb=document.getElementById('sbHist');
-  list.innerHTML=sb?sb.innerHTML:'';
-}
-
-async function newChat(){
-  try{const r=await api('/api/sessions/new','POST',{sport_tab:sport});sessId=r.session_id;clearMsgs();await loadSessions();}
-  catch(e){sessId='default';clearMsgs();}
-}
-
+function renderHistMob(){const m=document.getElementById('histMob');const s=document.getElementById('sbHist');if(m&&s)m.innerHTML=s.innerHTML;}
+async function newChat(){try{const r=await api('/api/sessions/new','POST',{sport_tab:sport});sessId=r.session_id;clearMsgs();await loadSessions();}catch(e){sessId='default';clearMsgs();}}
 async function loadSess(sid){
-  sessId=sid;
-  document.querySelectorAll('.hi').forEach(el=>el.classList.toggle('on',el.dataset.id===sid));
-  clearMsgs(false);
-  try{
-    const d=await api(`/api/sessions/${sid}`);
-    if(!d.history?.length){showWelcome();return;}
-    d.history.forEach(m=>{if(m.role==='user')addU(m.content);else addA(m.content,[]);});
-    if(d.bets?.length)addBetsLast(d.bets);
-  }catch(e){showWelcome();}
+  sessId=sid;document.querySelectorAll('.hi').forEach(el=>el.classList.toggle('on',el.dataset.id===sid));clearMsgs(false);
+  try{const d=await api(`/api/sessions/${sid}`);if(!d.history?.length){showWelcome();return;}d.history.forEach(m=>{if(m.role==='user')addU(m.content);else addA(m.content,[]);});if(d.bets?.length)addBetsLast(d.bets);}
+  catch(e){showWelcome();}
 }
-
 async function delSess(e,sid){
   e.stopPropagation();
   try{await api(`/api/sessions/${sid}`,'DELETE');}catch(e){}
   if(sessId===sid)await newChat();else await loadSessions();
 }
 
-// ── HOT GAMES ────────────────────────────────────────────────────────
+// Hot games
 async function loadHotGames(){
   const el=document.getElementById('hotGames');if(!el)return;
-  el.innerHTML='<span style="color:var(--m);font-size:12px;font-family:JetBrains Mono,monospace">Loading...</span>';
+  el.innerHTML='<span class="load-txt">🔍 Searching for hot games...</span>';
   try{
     const d=await api(`/api/hot-games?sport=${sport}`);const games=d.games||[];
-    if(!games.length){el.innerHTML='<span style="color:var(--m);font-size:12px;font-family:JetBrains Mono,monospace">No upcoming games found</span>';return;}
-    el.innerHTML=games.map(g=>`<div class="hg" onclick="sendQ('${esc(g.query)}')"><div class="hg-sp">${g.sport}</div><div class="hg-m">${esc(g.home)} vs ${esc(g.away)}</div><div class="hg-d">${g.date||'Upcoming'}${g.time?' · '+g.time:''}</div></div>`).join('');
-  }catch(e){if(el)el.innerHTML='<span style="color:var(--m);font-size:12px">Could not load</span>';}
+    if(!games.length){el.innerHTML='<span class="load-txt">No games found</span>';return;}
+    el.innerHTML=games.map(g=>`
+      <div class="hg" onclick="sendQ('${esc(g.query)}')">
+        <div class="hg-sp">${esc(g.sport)}</div>
+        <div class="hg-m">${esc(g.home)} vs ${esc(g.away)}</div>
+        ${g.competition?`<div class="hg-comp">${esc(g.competition)}</div>`:''}
+        <div class="hg-d">${g.date||'Upcoming'}${g.time?' · '+g.time:''}</div>
+      </div>`).join('');
+  }catch(e){if(el)el.innerHTML='<span class="load-txt">Could not load games</span>';}
 }
 
-// ── SEND ─────────────────────────────────────────────────────────────
+// Send
 function hKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
-function aRes(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function aRes(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
 function sendQ(t){document.getElementById('inp').value=t;aRes(document.getElementById('inp'));sendMsg();}
 
 async function sendMsg(){
-  if(loading)return;
-  const input=document.getElementById('inp');const text=input.value.trim();if(!text)return;
+  if(loading)return;const input=document.getElementById('inp');const text=input.value.trim();if(!text)return;
   const w=document.getElementById('welcome');if(w)w.remove();
   addU(text);input.value='';input.style.height='auto';
   const tid=showTyping();loading=true;document.getElementById('sBtn').disabled=true;
   try{
-    const d=await api('/api/chat','POST',{message:text,session_id:sessId,sport_tab:sport});
-    removeTyping(tid);
+    const d=await api('/api/chat','POST',{message:text,session_id:sessId,sport_tab:sport});removeTyping(tid);
     if(d.limit_reached){addLimit();}
-    else{
-      addA(d.response,d.bets||[]);
-      if(d.parlay?.picks?.length)addParlayLast(d.parlay);
-      dailyUsed++;updateUI();await loadSessions();
-    }
+    else{addA(d.response,d.bets||[]);if(d.parlay?.picks?.length)addParlayLast(d.parlay);dailyUsed++;updateUI();await loadSessions();}
   }catch(e){removeTyping(tid);addA(`⚠️ ${e.message}`,[]);}
   finally{loading=false;document.getElementById('sBtn').disabled=false;}
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────
+// Render messages
 function addU(text){
-  const c=document.getElementById('msgs'),d=document.createElement('div');
-  d.className='msg msg-u';
+  const c=document.getElementById('msgs'),d=document.createElement('div');d.className='msg msg-u';
   d.innerHTML=`<div class="av av-u">YOU</div><div class="mb"><div class="mn">You</div><div class="bbl bbl-u">${esc(text).replace(/\n/g,'<br>')}</div></div>`;
   c.appendChild(d);c.scrollTop=c.scrollHeight;
 }
-
 function addA(text,bets){
-  const c=document.getElementById('msgs'),d=document.createElement('div');
-  d.className='msg';
-  const cm=text.match(/🎯\s*MY CONCLUSION:?([\s\S]*?)(?=\n\n|\n---|$)/i);
+  const c=document.getElementById('msgs'),d=document.createElement('div');d.className='msg';
+  const cm=text.match(/🎯 MY CONCLUSION:([\s\S]*?)(?=\n\n|\n---|\nBET:|$)/i);
   const ch=cm?`<div class="conc"><div class="conc-l">🎯 My Conclusion</div><div class="conc-t">${fmt(cm[1].trim())}</div></div>`:'';
   const bh=bets.length?renderBets(bets):'';
-  d.innerHTML=`<div class="av av-a">🎯</div><div class="mb"><div class="mn">OddsGPT</div><div class="bbl bbl-a">${fmt(text)}</div>${ch}${bh}</div>`;
+  d.innerHTML=`<div class="av av-a">🎯</div><div class="mb"><div class="mn">OddsGPT · AI Analyst</div><div class="bbl bbl-a">${fmt(text)}</div>${ch}${bh}</div>`;
   c.appendChild(d);c.scrollTop=c.scrollHeight;
 }
-
 function addLimit(){
-  const c=document.getElementById('msgs'),d=document.createElement('div');
-  d.className='msg';
+  const c=document.getElementById('msgs'),d=document.createElement('div');d.className='msg';
   d.innerHTML=`<div class="av av-a">🎯</div><div class="mb"><div class="mn">OddsGPT</div>
-    <div class="lcard"><div class="lcard-t">⛔ Daily Limit / Kufiri Ditor</div>
-    <div style="font-size:13px;color:var(--m2);margin-bottom:8px">You've used all ${3} free analyses today. Enter a promo code to unlock Premium.<br>Keni përdorur të gjitha ${3} analizat falas. Futni kodin promo.</div>
-    <div class="crow"><input class="cinp" id="iCode" placeholder="Promo code..."/><button class="cbtn" onclick="applyInline()">Apply</button></div>
-    <div id="iCodeMsg" style="font-size:11px;margin-top:6px;display:none"></div></div></div>`;
+  <div class="lcard"><div class="lcard-t">⛔ Daily Limit Reached</div>
+  <div style="font-size:13px;color:var(--m3);margin-bottom:6px">You've used all 3 free analyses today.<br>Keni përdorur 3 analizat falas sot.</div>
+  <div class="crow"><input class="cinp" id="iCode" placeholder="Enter promo code..."/><button class="cbtn" onclick="applyInline()">Apply</button></div>
+  <div id="iMsg" style="font-size:11px;margin-top:7px;display:none"></div>
+  </div></div>`;
   c.appendChild(d);c.scrollTop=c.scrollHeight;
 }
 
 async function applyInline(){
   const code=document.getElementById('iCode')?.value?.trim();if(!code)return;
-  const msg=document.getElementById('iCodeMsg');
-  try{
-    const r=await api('/api/auth/apply-code','POST',{code});
-    if(r.success){
-      tok=r.new_token;role=r.role;save();updateUI();
-      if(msg){msg.textContent=r.message;msg.style.color='var(--win)';msg.style.display='block';}
-    }
-  }catch(e){if(msg){msg.textContent='❌ '+e.message;msg.style.color='var(--lose)';msg.style.display='block';}}
+  const msg=document.getElementById('iMsg');
+  try{const r=await api('/api/auth/apply-code','POST',{code});if(r.success){tok=r.new_token;role=r.role;save();updateUI();if(msg){msg.textContent=r.message;msg.style.color='var(--win)';msg.style.display='block';}}}
+  catch(e){if(msg){msg.textContent='❌ '+e.message;msg.style.color='var(--lose)';msg.style.display='block';}}
 }
 
 function renderBets(bets){
   if(!bets.length)return'';
-  const cards=bets.map(b=>`<div class="bc ${esc(b.risk)}" data-id="${b.id||''}">
-    ${b.match?`<div class="bc-m">${esc(b.match)}</div>`:''}
-    <div><div class="bc-t">${esc(b.type||b.bet_type||'')}</div><div class="bc-p">${esc(b.pick)}</div><div class="bc-r">${esc(b.reasoning||b.reason||'')}</div></div>
-    <div class="bc-rt"><div class="bc-o">${esc(b.odds_range||b.odds||'N/A')}</div><div class="${esc(b.risk)} rbd">${esc(b.risk)}</div></div>
-    <div class="cbar"><div class="cf" style="width:${b.confidence}%"></div></div>
-    <div class="clbl">Confidence: ${b.confidence}%</div>
-    ${b.id?`<div class="res-btns"><button class="rrb ww" onclick="markR(${b.id},'won',this)">✓ Won</button><button class="rrb ll" onclick="markR(${b.id},'lost',this)">✗ Lost</button></div>`:''}</div>`).join('');
-  return `<div class="bw"><div class="bl">🎲 Recommendations</div>${cards}</div>`;
+  const cards=bets.map(b=>`
+    <div class="bc ${esc(b.risk)}" data-id="${b.id||''}">
+      ${b.match?`<div class="bc-m">${esc(b.match)}</div>`:''}
+      <div><div class="bc-t">${esc(b.type||b.bet_type||'Bet')}</div><div class="bc-p">${esc(b.pick)}</div><div class="bc-r">${esc(b.reasoning||b.reason||'')}</div></div>
+      <div class="bc-rt"><div class="bc-o">${esc(b.odds_range||b.odds||'N/A')}</div><div class="${esc(b.risk)} rbd">${esc(b.risk)}</div></div>
+      <div class="cbar"><div class="cf" style="width:${b.confidence}%"></div></div>
+      <div class="clbl">AI Confidence: ${b.confidence}%</div>
+      ${b.id?`<div class="res-btns"><button class="rrb ww" onclick="markR(${b.id},'won',this)">✓ Won</button><button class="rrb ll" onclick="markR(${b.id},'lost',this)">✗ Lost</button></div>`:''}</div>`).join('');
+  return `<div class="bw"><div class="bl2">🎲 Bet Recommendations</div>${cards}</div>`;
 }
-
 async function markR(id,result,btn){
-  try{
-    await api('/api/bets/result','POST',{bet_id:id,result});
-    const wrap=btn.closest('.res-btns');
-    if(wrap)wrap.innerHTML=`<span style="font-size:10px;color:${result==='won'?'var(--win)':'var(--lose)'}">${result==='won'?'✓ Won':'✗ Lost'}</span>`;
-  }catch(e){}
+  try{await api('/api/bets/result','POST',{bet_id:id,result});const w=btn.closest('.res-btns');if(w)w.innerHTML=`<span style="font-size:10px;color:${result==='won'?'var(--win)':'var(--lose)'};font-family:'JetBrains Mono',monospace;font-weight:700">${result==='won'?'✓ Won':'✗ Lost'}</span>`;}catch(e){}
 }
-
-function addBetsLast(bets){
-  const last=document.querySelector('#msgs .msg:not(.msg-u):last-child .mb');
-  if(!last)return;const w=document.createElement('div');w.innerHTML=renderBets(bets);last.appendChild(w);
-}
-
+function addBetsLast(bets){const l=document.querySelector('#msgs .msg:not(.msg-u):last-child .mb');if(!l)return;const w=document.createElement('div');w.innerHTML=renderBets(bets);l.appendChild(w);}
 function addParlayLast(p){
-  const last=document.querySelector('#msgs .msg:not(.msg-u):last-child .mb');if(!last)return;
+  const l=document.querySelector('#msgs .msg:not(.msg-u):last-child .mb');if(!l)return;
   const d=document.createElement('div');d.className='par';
-  d.innerHTML=`<div class="par-t">🔗 Parlay Suggestion</div><div class="par-p">${(p.picks||[]).map(x=>`• ${esc(x)}`).join('<br>')}</div><div class="par-o">Odds: ${esc(p.combined_odds||'N/A')} · Conf: ${p.confidence||0}%</div>${p.note?`<div style="font-size:11px;color:var(--m);margin-top:4px">${esc(p.note)}</div>`:''}`;
-  last.appendChild(d);
+  d.innerHTML=`<div class="par-t">🔗 Parlay Suggestion</div><div class="par-p">${(p.picks||[]).map(x=>`• ${esc(x)}`).join('<br>')}</div><div class="par-o">Estimated odds: ${esc(p.combined_odds||'N/A')} · AI Confidence: ${p.confidence||0}%</div>${p.note?`<div style="font-size:11px;color:var(--m);margin-top:5px">${esc(p.note)}</div>`:''}`;
+  l.appendChild(d);
 }
-
 function showTyping(){
   const id=`ty${Date.now()}`,c=document.getElementById('msgs'),d=document.createElement('div');
   d.className='typing';d.id=id;d.innerHTML=`<div class="av av-a">🎯</div><div class="dots"><span></span><span></span><span></span></div>`;
   c.appendChild(d);c.scrollTop=c.scrollHeight;return id;
 }
 function removeTyping(id){const e=document.getElementById(id);if(e)e.remove();}
-
 function clearMsgs(sw=true){document.getElementById('msgs').innerHTML='';if(sw)showWelcome();}
 function showWelcome(){
-  const c=document.getElementById('msgs');
-  c.innerHTML=`<div class="welcome" id="welcome">
-    <div class="wbadge"><span class="pulse"></span>Live Internet Connected</div>
-    <h1>Your <span style="color:var(--a)">Betting</span> Analyst</h1>
-    <p>Click an upcoming game or type a match. I'll search live odds, lineups, injuries & expert tips in real-time.</p>
-    <div style="width:100%;max-width:540px">
-      <div class="hot-label">🔥 Upcoming Games — ${sport==='all'?'All Sports':sport.charAt(0).toUpperCase()+sport.slice(1)}</div>
-      <div class="hot-games" id="hotGames"><span style="color:var(--m);font-size:12px;font-family:JetBrains Mono,monospace">Loading...</span></div>
+  const sportName=sport==='all'?'All Sports':sport.charAt(0).toUpperCase()+sport.slice(1);
+  document.getElementById('msgs').innerHTML=`
+  <div class="welcome" id="welcome">
+    <div class="wbadge"><span class="pulse"></span>Live Internet Connected · AI Powered</div>
+    <h1>Your <span class="g">AI Betting</span> Analyst</h1>
+    <p>Click any upcoming match or type your own. I'll search live odds, lineups, injuries & expert tips in real-time.</p>
+    <div class="hot-section">
+      <div class="hot-header"><div class="hot-label">🔥 ${sportName} — Upcoming Matches</div></div>
+      <div class="hot-games" id="hotGames"><span class="load-txt">🔍 Searching for hot games...</span></div>
     </div>
   </div>`;
   loadHotGames();
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────
+// Dashboard
 async function loadDash(){
-  const el=document.getElementById('dashC');el.innerHTML='Loading...';
+  const el=document.getElementById('dashC');el.innerHTML='<div class="pt">📊 My Bet History</div><div style="color:var(--m3);font-size:13px">Loading...</div>';
   try{
     const d=await api('/api/dashboard');const s=d.stats||{};
-    el.innerHTML=`<div class="pt">📊 ${lang==='al'?'Historiku i Basteve':'My Bet History'}</div>
-      <div class="sg">
-        <div class="sbox"><div class="snum">${s.total||0}</div><div class="slbl">Total</div></div>
-        <div class="sbox"><div class="snum" style="color:var(--win)">${s.won||0}</div><div class="slbl">Won</div></div>
-        <div class="sbox"><div class="snum" style="color:var(--lose)">${s.lost||0}</div><div class="slbl">Lost</div></div>
-        <div class="sbox"><div class="snum">${s.winrate||0}%</div><div class="slbl">Win Rate</div></div>
-      </div>
-      <div class="sec-lbl">Recent Bets</div>
-      ${(d.bets||[]).slice(0,25).map(b=>`<div class="bhi"><div class="bhr ${b.result}">${b.result}</div>
+    el.innerHTML=`<div class="pt">📊 My Bet History</div>
+    <div class="sg">
+      <div class="sbox"><div class="snum yellow">${s.total||0}</div><div class="slbl">Total Bets</div></div>
+      <div class="sbox green"><div class="snum green">${s.won||0}</div><div class="slbl">Won</div></div>
+      <div class="sbox red"><div class="snum red">${s.lost||0}</div><div class="slbl">Lost</div></div>
+      <div class="sbox"><div class="snum blue">${s.winrate||0}%</div><div class="slbl">Win Rate</div></div>
+    </div>
+    <div class="sec-lbl">Recent Bets</div>
+    ${(d.bets||[]).slice(0,25).map(b=>`
+      <div class="bhi ${b.result}">
+        <div class="bhr ${b.result}">${b.result}</div>
         <div class="bhi-m">${esc(b.match_name||'')} · ${(b.created_at||'').slice(0,10)}</div>
         <div class="bhi-p">${esc(b.pick)}</div>
-        <div class="bhi-c">${esc(b.bet_type||'')} · ${b.confidence}% · ${esc(b.odds_range||'')}</div>
-        ${b.result==='pending'?`<div class="bhi-a"><button class="bhb" onclick="markR(${b.id},'won',this);this.closest('.bhi').querySelector('.bhr').textContent='won';this.closest('.bhi').querySelector('.bhr').className='bhr won'">✓ Won</button><button class="bhb" onclick="markR(${b.id},'lost',this);this.closest('.bhi').querySelector('.bhr').textContent='lost';this.closest('.bhi').querySelector('.bhr').className='bhr lost'">✗ Lost</button></div>`:''}
+        <div class="bhi-c">${esc(b.bet_type||'')} · ${b.confidence}% confidence · ${esc(b.odds_range||'')}</div>
+        ${b.result==='pending'?`<div class="bhi-a">
+          <button class="bhb" onclick="markR(${b.id},'won',this);this.closest('.bhi').className='bhi won';this.closest('.bhi').querySelector('.bhr').textContent='won';this.closest('.bhi').querySelector('.bhr').className='bhr won'">✓ Won</button>
+          <button class="bhb" onclick="markR(${b.id},'lost',this);this.closest('.bhi').className='bhi lost';this.closest('.bhi').querySelector('.bhr').textContent='lost';this.closest('.bhi').querySelector('.bhr').className='bhr lost'">✗ Lost</button>
+        </div>`:''}
       </div>`).join('')}`;
-  }catch(e){el.innerHTML=`<div class="pt">Stats</div><p style="color:var(--m)">${e.message}</p>`;}
+  }catch(e){el.innerHTML=`<div class="pt">Stats</div><p style="color:var(--m3)">${e.message}</p>`;}
 }
 
-// ── PROFILE ──────────────────────────────────────────────────────────
+// Profile
 async function loadProf(){
   const el=document.getElementById('profC');el.innerHTML='Loading...';
   try{
-    const me=await api('/api/auth/me');
+    const [me,paySet]=await Promise.all([api('/api/auth/me'),api('/api/payment/settings').catch(()=>({enabled:false}))]);
     const pct=Math.min(100,Math.round((me.daily_used/me.daily_limit)*100));
-    const isVerified=me.is_verified;
-    el.innerHTML=`<div class="pt">👤 Profile</div>
-      <div class="lang-toggle">
-        <button class="lt ${lang==='en'?'on':''}" onclick="setLang('en')">EN</button>
-        <button class="lt ${lang==='al'?'on':''}" onclick="setLang('al')">SQ</button>
+    el.innerHTML=`<div class="pt">👤 My Profile</div>
+    <div class="pcard">
+      <div class="pname">${esc(me.username)}</div>
+      <div class="pemail">${esc(me.email)}</div>
+      <div class="pbadges">
+        <span class="rb ${ROLE_CLS[me.role]||'rb-free'}">${ROLE_LBL[me.role]||me.role}</span>
+        ${me.is_verified?'<span class="badge-v">✓ Verified</span>':'<span class="badge-u">⚠ Unverified</span>'}
       </div>
-      <div class="pcard">
-        <div class="pname">${esc(me.username)}</div>
-        <div class="pemail">${esc(me.email)}</div>
-        <div class="pbadges">
-          <span class="rb rb-${me.role}">${me.role.charAt(0).toUpperCase()+me.role.slice(1)}</span>
-          ${isVerified?'<span style="background:rgba(48,208,128,.1);border:1px solid rgba(48,208,128,.2);border-radius:4px;padding:2px 7px;font-size:9px;color:var(--win);font-family:JetBrains Mono,monospace">✓ Verified</span>':'<span style="background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.2);border-radius:4px;padding:2px 7px;font-size:9px;color:var(--warn);font-family:JetBrains Mono,monospace">⚠ Unverified</span>'}
-        </div>
-        ${me.role==='free'?`<div class="ubar"><div class="uf" style="width:${pct}%"></div></div><div class="utxt">${me.daily_used}/${me.daily_limit} analyses used today</div>`:'<div style="color:var(--win);font-size:12px;margin-top:8px">✓ Unlimited analyses</div>'}
-        ${me.premium_expires?`<div style="font-size:11px;color:var(--m);margin-top:5px">Expires: ${me.premium_expires.slice(0,10)}</div>`:''}
-        <div style="font-size:11px;color:var(--m);margin-top:4px">Total searches: ${me.total_searches||0}</div>
-      </div>
-      ${me.role!=='owner'?`<div style="margin-bottom:12px">
-        <div class="sec-lbl">Promo / Access Code</div>
-        <div class="crow"><input class="cinp" id="pCode" placeholder="Enter code..."/><button class="cbtn" onclick="applyProfCode()">Apply</button></div>
-        <div id="pCodeMsg" style="font-size:11px;margin-top:6px;display:none"></div>
-      </div>`:''}
-      <div>
-        <button class="actb" onclick="gPanel('dash')">📊 My Bet History</button>
-        ${me.role==='operator'||me.role==='owner'?`<button class="actb" onclick="gPanel('staff')">🔧 Staff Panel</button>`:''}
-        ${me.role==='owner'?`<button class="actb" onclick="gPanel('owner')">👑 Owner Panel</button>`:''}
-        <button class="actb" onclick="showTerms()">📋 Terms & Privacy</button>
-        <button class="dngr" onclick="logout()">⏻ Logout</button>
-      </div>`;
-  }catch(e){el.innerHTML=`<p style="color:var(--m)">${e.message}</p>`;}
+      ${me.role==='free'?`<div class="ubar-wrap"><div class="ubar"><div class="uf" style="width:${pct}%"></div></div><div class="utxt">${me.daily_used}/${me.daily_limit} analyses used today</div></div>`:`<div style="color:var(--win);font-size:12px;margin-top:10px;font-family:'JetBrains Mono',monospace">✓ ${me.role==='premium'?'Unlimited analyses':'Staff access'}</div>`}
+      ${me.premium_expires?`<div style="font-size:11px;color:var(--m3);margin-top:6px;font-family:'JetBrains Mono',monospace">Expires: ${me.premium_expires.slice(0,10)}</div>`:''}
+      ${!me.is_verified?`<button style="margin-top:10px;background:none;border:1px solid var(--a);border-radius:7px;color:var(--a);font-size:11px;padding:5px 12px;cursor:pointer;font-family:'JetBrains Mono',monospace" onclick="resendVerify()">Resend verification email</button>`:''}
+    </div>
+    ${me.role!=='owner'?`<div class="promo-section">
+      <div class="sec-lbl">Promo / Access Code</div>
+      <div class="crow"><input class="cinp" id="pCode" placeholder="Enter your code..."/><button class="cbtn" onclick="applyProfCode()">Apply</button></div>
+      <div id="pMsg" style="font-size:11px;margin-top:7px;display:none"></div>
+    </div>`:''}
+    ${paySet.enabled&&me.role==='free'?`<div class="pay-card">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--t)">Upgrade to Premium</div>
+      <div style="font-size:12px;color:var(--m3);margin-top:6px">Unlimited analyses · All sports · Priority analysis</div>
+      <div class="pay-price">${paySet.currency} ${paySet.price}/mo</div>
+      <button class="pay-btn" onclick="startPayment()">Pay with PayPal 💳</button>
+      <div id="payMsg" style="font-size:11px;margin-top:8px;display:none;color:var(--win)"></div>
+    </div>`:''}
+    <div style="margin-top:16px">
+      <button class="actb" onclick="gPanel('dash')"><span class="ai">📊</span>My Bet History</button>
+      ${me.role==='operator'||me.role==='owner'?`<button class="actb" onclick="gPanel('staff')"><span class="ai">🔧</span>Staff Panel</button>`:''}
+      ${me.role==='owner'?`<button class="actb" onclick="gPanel('owner')"><span class="ai">👑</span>Owner Panel</button>`:''}
+      <button class="actb" onclick="showTerms()"><span class="ai">📋</span>Terms & Privacy</button>
+      <button class="dngr" onclick="logout()">⏻ Logout</button>
+    </div>`;
+  }catch(e){el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
+}
+
+async function resendVerify(){
+  try{await api('/api/auth/resend-verify','POST',{});alert('Verification email sent!');}
+  catch(e){alert(e.message);}
 }
 
 async function applyProfCode(){
   const code=document.getElementById('pCode')?.value?.trim();if(!code)return;
-  const msg=document.getElementById('pCodeMsg');
-  try{
-    const r=await api('/api/auth/apply-code','POST',{code});
-    if(r.success){tok=r.new_token;role=r.role;save();updateUI();if(msg){msg.textContent=r.message;msg.style.color='var(--win)';msg.style.display='block';}setTimeout(loadProf,600);}
-  }catch(e){if(msg){msg.textContent='❌ '+e.message;msg.style.color='var(--lose)';msg.style.display='block';}}
+  const msg=document.getElementById('pMsg');
+  try{const r=await api('/api/auth/apply-code','POST',{code});if(r.success){tok=r.new_token;role=r.role;save();updateUI();if(msg){msg.textContent=r.message;msg.style.color='var(--win)';msg.style.display='block';}setTimeout(loadProf,600);}}
+  catch(e){if(msg){msg.textContent='❌ '+e.message;msg.style.color='var(--lose)';msg.style.display='block';}}
 }
 
-function setLang(l){lang=l;localStorage.setItem('og_lang',l);loadProf();}
+async function startPayment(){
+  const btn=document.querySelector('.pay-btn');if(btn)btn.textContent='Creating order...';
+  try{
+    const r=await api('/api/payment/create-order','POST',{});
+    if(r.approve_url){window.open(r.approve_url,'_blank');const msg=document.getElementById('payMsg');if(msg){msg.textContent='✓ PayPal opened. Complete payment and contact us to activate Premium.';msg.style.display='block';}}
+  }catch(e){if(btn)btn.textContent='Pay with PayPal 💳';alert(e.message);}
+}
 
-// ── STAFF ─────────────────────────────────────────────────────────────
+// Staff panel
 async function loadStaff(){
   const el=document.getElementById('staffC');el.innerHTML='Loading...';
   try{
     const [ud,sd]=await Promise.all([api('/api/staff/users'),api('/api/staff/sessions')]);
     el.innerHTML=`<div class="pt">🔧 Staff Panel</div>
-      <div class="sec-lbl">All Users (${(ud.users||[]).length})</div>
-      <div style="overflow-x:auto"><table class="at">
-        <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Searches</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody>${(ud.users||[]).map(u=>`<tr>
-          <td><strong>${esc(u.username)}</strong></td>
-          <td style="font-family:JetBrains Mono,monospace;font-size:10px">${esc(u.email)}</td>
-          <td><span class="rb rb-${u.role}" style="font-size:9px">${u.role}</span></td>
-          <td>${u.total_searches||0}</td>
-          <td>${u.is_banned?'<span style="color:var(--lose);font-size:10px">Banned</span>':'<span style="color:var(--win);font-size:10px">Active</span>'}</td>
-          <td style="display:flex;gap:3px;flex-wrap:wrap;min-width:80px">
-            <button class="tbtn" onclick="viewSearches('${u.id}','${esc(u.username)}')">Searches</button>
-            <button class="tbtn" onclick="viewSess('${u.id}','${esc(u.username)}')">Chats</button>
-          </td>
-        </tr>`).join('')}</tbody>
-      </table></div>
-      <div id="staffExtra"></div>`;
-  }catch(e){el.innerHTML=`<div class="pt">Staff</div><p style="color:var(--m)">${e.message}</p>`;}
+    <div class="sec-lbl">Users (${(ud.users||[]).length})</div>
+    <div style="overflow-x:auto"><table class="at">
+      <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Searches</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${(ud.users||[]).map(u=>`<tr>
+        <td><strong>${esc(u.username)}</strong></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${esc(u.email)}</td>
+        <td><span class="rb ${ROLE_CLS[u.role]||'rb-free'}" style="font-size:8px">${u.role}</span></td>
+        <td>${u.total_searches||0}</td>
+        <td>${u.is_banned?'<span style="color:var(--lose);font-size:10px;font-weight:700">Banned</span>':'<span style="color:var(--win);font-size:10px">Active</span>'}</td>
+        <td style="display:flex;gap:3px;flex-wrap:wrap">
+          <button class="tbtn" onclick="viewSearches('${u.id}','${esc(u.username)}')">Searches</button>
+          <button class="tbtn" onclick="viewUserSess('${u.id}','${esc(u.username)}')">Chats</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="sec-lbl">Hot Searched Games</div>
+    <div id="hotSearched"><button class="tbtn" onclick="loadHotSearched()">Load Hot Searches</button></div>
+    <div class="sec-lbl">All Chats (${(sd.sessions||[]).length})</div>
+    <div style="overflow-x:auto"><table class="at">
+      <thead><tr><th>User</th><th>Title</th><th>Sport</th><th>Hidden</th><th>Updated</th><th></th></tr></thead>
+      <tbody>${(sd.sessions||[]).map(s=>`<tr>
+        <td>${esc(s.username)}</td>
+        <td>${esc(s.title)}</td>
+        <td>${esc(s.sport_tab)}</td>
+        <td>${s.hidden?'<span style="color:var(--m3);font-size:10px">Hidden</span>':'<span style="color:var(--win);font-size:10px">Visible</span>'}</td>
+        <td style="font-size:10px;color:var(--m3)">${(s.updated_at||'').slice(0,10)}</td>
+        <td><button class="tbtn" onclick="viewOneSess('${s.id}')">View</button></td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="sec-lbl">Payments</div>
+    <div id="staffPay"><button class="tbtn" onclick="loadStaffPayments()">Load Payments</button></div>
+    <div id="staffExtra"></div>`;
+  }catch(e){el.innerHTML=`<div class="pt">Staff</div><p style="color:var(--m3)">${e.message}</p>`;}
 }
 
-async function viewSearches(uid,uname2){
-  const el=document.getElementById('staffExtra');el.innerHTML='Loading...';
+async function loadHotSearched(){
+  const el=document.getElementById('hotSearched');el.innerHTML='Loading...';
+  try{
+    const d=await api('/api/staff/hot-searched');
+    el.innerHTML=(d.hot||[]).length?d.hot.map((h,i)=>`
+      <div class="hot-item">
+        <div class="hot-rank">#${i+1}</div>
+        <div class="hot-query">
+          <div class="hot-query-text">${esc(h.query)}</div>
+          <div class="hot-query-sport">${esc(h.sport||'—')}</div>
+        </div>
+        <div class="hot-count">${h.cnt}×</div>
+      </div>`).join(''):
+      '<p style="color:var(--m3);font-size:12px">No searches yet</p>';
+  }catch(e){el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
+}
+
+async function loadStaffPayments(){
+  const el=document.getElementById('staffPay');el.innerHTML='Loading...';
+  try{
+    const d=await api('/api/staff/payments');
+    el.innerHTML=(d.payments||[]).length?`<div style="overflow-x:auto"><table class="at">
+      <thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>${d.payments.map(p=>`<tr>
+        <td>${esc(p.username)}</td>
+        <td style="color:var(--a);font-family:'JetBrains Mono',monospace">${p.currency} ${p.amount}</td>
+        <td><span style="color:${p.status==='confirmed'?'var(--win)':p.status==='pending'?'var(--warn)':'var(--m3)';};font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700">${p.status}</span></td>
+        <td style="font-size:10px;color:var(--m3)">${(p.created_at||'').slice(0,10)}</td>
+      </tr>`).join('')}</tbody></table></div>`:
+      '<p style="color:var(--m3);font-size:12px">No payments yet</p>';
+  }catch(e){el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
+}
+
+async function viewSearches(uid,un){
+  const el=document.getElementById('staffExtra');el.innerHTML='Loading searches...';
   try{
     const d=await api(`/api/staff/searches/${uid}`);
-    el.innerHTML=`<div class="sec-lbl" style="margin-top:16px">Searches — ${esc(uname2)}</div>
-      ${(d.searches||[]).map(s=>`<div style="background:var(--p);border:1px solid var(--b);border-radius:7px;padding:8px 11px;margin-bottom:6px;font-size:12px"><div style="color:var(--m);font-family:JetBrains Mono,monospace;font-size:9px">${(s.created_at||'').slice(0,16)} · ${esc(s.sport)}</div><div style="color:var(--t);margin-top:3px">${esc(s.query)}</div></div>`).join('')}`;
-  }catch(e){el.innerHTML=`<p style="color:var(--m)">${e.message}</p>`;}
+    el.innerHTML=`<div class="sec-lbl">Searches — ${esc(un)}</div>
+    ${(d.searches||[]).map(s=>`<div style="background:var(--p);border:1px solid var(--b2);border-radius:9px;padding:9px 12px;margin-bottom:6px">
+      <div style="color:var(--m);font-family:'JetBrains Mono',monospace;font-size:9px;margin-bottom:3px">${(s.created_at||'').slice(0,16)} · ${esc(s.sport||'—')}</div>
+      <div style="color:var(--t);font-size:12px">${esc(s.query)}</div>
+    </div>`).join('')}`;
+  }catch(e){el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
 }
 
-async function viewSess(uid,uname2){
+async function viewUserSess(uid,un){
   const el=document.getElementById('staffExtra');el.innerHTML='Loading...';
   try{
     const d=await api('/api/staff/sessions');
-    const userSess=(d.sessions||[]).filter(s=>s.username===uname2);
-    el.innerHTML=`<div class="sec-lbl" style="margin-top:16px">Chats — ${esc(uname2)}</div>
-      ${userSess.map(s=>`<div style="background:var(--p);border:1px solid var(--b);border-radius:7px;padding:8px 11px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;color:var(--t)">${esc(s.title)}</div><div style="font-size:10px;color:var(--m)">${(s.updated_at||'').slice(0,16)}</div></div><button class="tbtn" onclick="viewOneSess('${s.id}')">View</button></div>`).join('')}`;
-  }catch(e){el.innerHTML=`<p style="color:var(--m)">${e.message}</p>`;}
+    const userSess=(d.sessions||[]).filter(s=>s.username===un);
+    el.innerHTML=`<div class="sec-lbl">Chats — ${esc(un)} (${userSess.length})</div>
+    ${userSess.map(s=>`<div style="background:var(--p);border:1px solid var(--b2);border-radius:9px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:${s.hidden?'var(--m3)':'var(--t)'}">${esc(s.title)}${s.hidden?' <span style="color:var(--m);font-size:10px">(hidden)</span>':''}</div>
+        <div style="font-size:10px;color:var(--m3);font-family:monospace">${(s.updated_at||'').slice(0,16)}</div>
+      </div>
+      <button class="tbtn" onclick="viewOneSess('${s.id}')">View</button>
+    </div>`).join('')}`;
+  }catch(e){el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
 }
 
 async function viewOneSess(sid){
   const el=document.getElementById('staffExtra');el.innerHTML='Loading...';
   try{
     const d=await api(`/api/staff/session/${sid}`);
-    el.innerHTML=`<div class="sec-lbl" style="margin-top:16px">Session Messages</div>
-      ${(d.messages||[]).map(m=>`<div style="background:${m.role==='user'?'var(--p2)':'var(--p)'};border:1px solid var(--b);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:12px;line-height:1.6"><div style="font-size:9px;color:var(--m);font-family:JetBrains Mono,monospace;text-transform:uppercase;margin-bottom:3px">${m.role} · ${(m.created_at||'').slice(0,16)}</div>${esc(m.content).replace(/\n/g,'<br>')}</div>`).join('')}`;
-  }catch(e){el.innerHTML=`<p style="color:var(--m)">${e.message}</p>`;}
+    el.innerHTML=`<div class="sec-lbl">Messages</div>
+    ${(d.messages||[]).map(m=>`<div style="background:${m.role==='user'?'var(--p2)':'var(--p)'};border:1px solid var(--b2);border-radius:9px;padding:9px 12px;margin-bottom:7px;font-size:12px;line-height:1.6">
+      <div style="font-size:9px;color:var(--m3);font-family:monospace;text-transform:uppercase;margin-bottom:4px">${m.role} · ${(m.created_at||'').slice(0,16)}</div>
+      ${esc(m.content).replace(/\n/g,'<br>')}
+    </div>`).join('')}`;
+  }catch(e){el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
 }
 
-// ── OWNER PANEL ───────────────────────────────────────────────────────
+// Owner panel
 async function loadOwner(){
   const el=document.getElementById('ownerC');el.innerHTML='Loading...';
   try{
-    const d=await api('/api/owner/users');
+    const [ud,st]=await Promise.all([api('/api/owner/users'),api('/api/owner/settings')]);
+    const sets=st.settings||{};
+    const paymentsOn=sets.payments_enabled==='true';
     el.innerHTML=`<div class="pt">👑 Owner Panel</div>
-      <div class="sec-lbl">All Accounts + Passwords (${(d.users||[]).length})</div>
-      <div style="overflow-x:auto"><table class="at">
-        <thead><tr><th>Username</th><th>Email</th><th>Password</th><th>Role</th><th>Searches</th><th>Banned</th><th>Actions</th></tr></thead>
-        <tbody>${(d.users||[]).map(u=>`<tr>
-          <td><strong>${esc(u.username)}</strong></td>
-          <td style="font-family:JetBrains Mono,monospace;font-size:10px">${esc(u.email)}</td>
-          <td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--warn)">${esc(u.password_plain||'—')}</td>
-          <td><span class="rb rb-${u.role}" style="font-size:9px">${u.role}</span></td>
-          <td>${u.total_searches||0}</td>
-          <td>${u.is_banned?`<span style="color:var(--lose);font-size:10px">${esc(u.ban_reason||'banned')}</span>`:'—'}</td>
-          <td style="display:flex;gap:3px;flex-wrap:wrap;min-width:100px">
-            ${u.role!==OWNER?`<button class="tbtn grn" onclick="ownerSetRole('${esc(u.username)}','premium')">⭐</button>
-            <button class="tbtn" onclick="ownerSetRole('${esc(u.username)}','operator')">🔧</button>
-            <button class="tbtn" onclick="ownerSetRole('${esc(u.username)}','free')">Free</button>
-            ${u.is_banned?`<button class="tbtn grn" onclick="ownerUnban('${esc(u.username)}')">Unban</button>`:`<button class="tbtn red" onclick="showBanDlg('${esc(u.username)}')">Ban</button>`}`:'<span style="color:var(--a2);font-size:10px">Protected</span>'}
-          </td>
-        </tr>`).join('')}</tbody>
-      </table></div>
-      <div class="sec-lbl" style="margin-top:18px">Add Monthly Code</div>
-      <div class="crow">
-        <input class="cinp" id="newCodeVal" placeholder="e.g. APRIL2025"/>
-        <select id="newCodeRole" style="background:var(--p);border:1px solid var(--b);border-radius:7px;padding:9px 8px;color:var(--t);font-family:JetBrains Mono,monospace;font-size:12px;outline:none">
-          <option value="premium">Premium</option>
-          <option value="operator">Operator</option>
-          <option value="owner">Owner</option>
+
+    <div class="sec-lbl">Payment Settings</div>
+    <div class="toggle-wrap">
+      <div><div class="toggle-label">💳 Accept Payments</div><div class="toggle-sub">Allow users to pay for Premium via PayPal</div></div>
+      <button class="toggle ${paymentsOn?'on':''}" id="payToggle" onclick="togglePayments()"></button>
+    </div>
+    <div class="pcard" style="margin-bottom:14px">
+      <div class="fd"><label>Premium Price</label><input type="text" id="priceVal" value="${esc(sets.premium_price||'9.99')}" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none"/></div>
+      <div class="fd"><label>Currency</label><input type="text" id="currVal" value="${esc(sets.premium_currency||'USD')}" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none"/></div>
+      <button class="cbtn" style="width:100%" onclick="savePaySettings()">Save Price Settings</button>
+      <div id="paySetMsg" style="font-size:11px;margin-top:7px;display:none"></div>
+    </div>
+
+    <div class="sec-lbl">Pending Payments — Confirm to activate Premium</div>
+    <div id="pendingPays">Loading...</div>
+
+    <div class="sec-lbl">All Accounts + Passwords (${(ud.users||[]).length})</div>
+    <div style="overflow-x:auto"><table class="at">
+      <thead><tr><th>Username</th><th>Email</th><th>Password</th><th>Role</th><th>Searches</th><th>Banned</th><th>Actions</th></tr></thead>
+      <tbody>${(ud.users||[]).map(u=>`<tr>
+        <td><strong>${esc(u.username)}</strong></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${esc(u.email)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--warn)">${esc(u.password_plain||'—')}</td>
+        <td><span class="rb ${ROLE_CLS[u.role]||'rb-free'}" style="font-size:8px">${u.role}</span></td>
+        <td>${u.total_searches||0}</td>
+        <td>${u.is_banned?`<span style="color:var(--lose);font-size:10px">${esc(u.ban_reason||'banned').slice(0,20)}</span>`:'—'}</td>
+        <td style="display:flex;gap:3px;flex-wrap:wrap;min-width:110px">
+          ${u.role!==OWNER_UN?`
+            <button class="tbtn grn" onclick="ownerRole('${esc(u.username)}','premium')">⭐</button>
+            <button class="tbtn" onclick="ownerRole('${esc(u.username)}','operator')">🔧</button>
+            <button class="tbtn" onclick="ownerRole('${esc(u.username)}','free')">Free</button>
+            ${u.is_banned?`<button class="tbtn grn" onclick="ownerUnban('${esc(u.username)}')">Unban</button>`:
+              `<button class="tbtn red" onclick="showBan('${esc(u.username)}')">Ban</button>`}
+          `:'<span style="color:var(--a2);font-size:10px">Protected</span>'}
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+
+    <div class="sec-lbl">Add Promo Code</div>
+    <div class="pcard">
+      <div class="fd"><label>Code</label><input id="nCode" type="text" placeholder="e.g. APRIL2025" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none"/></div>
+      <div class="fd"><label>Grants Role</label>
+        <select id="nRole" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none">
+          <option value="premium">Premium</option><option value="operator">Operator</option><option value="owner">Owner</option>
         </select>
-        <button class="cbtn" onclick="addCode()">Add</button>
       </div>
-      <div id="codeMsg" style="font-size:11px;margin-top:6px;display:none"></div>
-      <div id="banDlg" style="display:none;margin-top:14px;background:var(--p);border:1px solid var(--b);border-radius:10px;padding:14px">
-        <div class="sec-lbl">Ban User: <span id="banTarget"></span></div>
-        <div class="fd"><label>Reason</label><input id="banReason" type="text" placeholder="e.g. Abuse"/></div>
-        <div class="fd"><label>Expires (leave blank = permanent)</label><input id="banExpires" type="datetime-local"/></div>
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <button class="cbtn" style="background:var(--lose)" onclick="executeBan()">Ban Account</button>
-          <button class="cbtn" style="background:var(--p2);color:var(--t)" onclick="document.getElementById('banDlg').style.display='none'">Cancel</button>
-        </div>
-      </div>`;
-  }catch(e){el.innerHTML=`<div class="pt">Owner</div><p style="color:var(--m)">${e.message}</p>`;}
+      <div class="fd"><label>Type</label>
+        <select id="nType" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none">
+          <option value="monthly">Monthly (expires end of month)</option><option value="permanent">Permanent</option>
+        </select>
+      </div>
+      <button class="cbtn" style="width:100%" onclick="addCode()">Add Code</button>
+      <div id="cMsg" style="font-size:11px;margin-top:7px;display:none"></div>
+    </div>
+
+    <div id="banDlg" style="display:none;background:var(--p);border:1px solid rgba(255,69,96,.3);border-radius:12px;padding:16px;margin-top:14px">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--lose);margin-bottom:12px;font-size:14px">🚫 Ban User: <span id="banTarget" style="color:var(--a)"></span></div>
+      <div class="fd"><label>Reason</label><input id="banReason" type="text" placeholder="e.g. Abuse, Multiple accounts" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none"/></div>
+      <div class="fd"><label>Expires (blank = permanent)</label><input id="banExp" type="datetime-local" style="background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t);font-size:14px;outline:none;width:100%;-webkit-appearance:none"/></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="cbtn" style="background:var(--lose);flex:1" onclick="execBan()">🚫 Ban Account</button>
+        <button class="cbtn" style="background:var(--p2);color:var(--t);flex:1" onclick="document.getElementById('banDlg').style.display='none'">Cancel</button>
+      </div>
+    </div>`;
+
+    loadPendingPayments();
+  }catch(e){el.innerHTML=`<div class="pt">Owner</div><p style="color:var(--m3)">${e.message}</p>`;}
 }
 
-const OWNER='arkel'; // replaced client-side (backend enforces anyway)
-async function ownerSetRole(username,role2){
-  try{await api('/api/owner/set-role','POST',{username,role:role2});loadOwner();}
+async function loadPendingPayments(){
+  const el=document.getElementById('pendingPays');if(!el)return;
+  try{
+    const d=await api('/api/staff/payments');
+    const pending=(d.payments||[]).filter(p=>p.status==='pending');
+    if(!pending.length){el.innerHTML='<p style="color:var(--m3);font-size:12px">No pending payments</p>';return;}
+    el.innerHTML=pending.map(p=>`
+      <div class="pay-pending">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--t)">${esc(p.username)} — <span style="color:var(--a)">${p.currency} ${p.amount}</span></div>
+          <div style="font-size:10px;color:var(--m3);font-family:monospace">${(p.created_at||'').slice(0,16)} · Order: ${esc(p.paypal_order_id||'—').slice(0,20)}</div>
+        </div>
+        <button class="cbtn" style="padding:7px 14px;font-size:11px" onclick="confirmPay(${p.id})">✓ Confirm & Activate</button>
+      </div>`).join('');
+  }catch(e){if(el)el.innerHTML=`<p style="color:var(--m3)">${e.message}</p>`;}
+}
+
+async function confirmPay(id){
+  try{const r=await api('/api/owner/confirm-payment','POST',{payment_id:id});alert(r.status);loadOwner();}
   catch(e){alert(e.message);}
 }
-async function ownerUnban(username){
-  try{await api('/api/owner/unban','POST',{username});loadOwner();}
-  catch(e){alert(e.message);}
-}
-function showBanDlg(username){
-  document.getElementById('banTarget').textContent=username;
-  document.getElementById('banDlg').style.display='block';
-  document.getElementById('banDlg').dataset.user=username;
-}
-async function executeBan(){
-  const username=document.getElementById('banDlg').dataset.user;
+
+const OWNER_UN='arkel';
+async function ownerRole(un,r){try{await api('/api/owner/set-role','POST',{username:un,role:r});loadOwner();}catch(e){alert(e.message);}}
+async function ownerUnban(un){try{await api('/api/owner/unban','POST',{username:un});alert('Unbanned!');loadOwner();}catch(e){alert(e.message);}}
+function showBan(un){document.getElementById('banTarget').textContent=un;document.getElementById('banDlg').style.display='block';document.getElementById('banDlg').dataset.user=un;}
+async function execBan(){
+  const un=document.getElementById('banDlg').dataset.user;
   const reason=document.getElementById('banReason').value.trim()||'Banned by owner';
-  const expires=document.getElementById('banExpires').value;
-  try{
-    await api('/api/owner/ban','POST',{username,reason,expires_at:expires||''});
-    document.getElementById('banDlg').style.display='none';
-    loadOwner();
-  }catch(e){alert(e.message);}
+  const exp=document.getElementById('banExp').value;
+  try{await api('/api/owner/ban','POST',{username:un,reason,expires_at:exp||''});document.getElementById('banDlg').style.display='none';loadOwner();}
+  catch(e){alert(e.message);}
 }
-async function addCode(){
-  const code=document.getElementById('newCodeVal')?.value?.trim();
-  const role2=document.getElementById('newCodeRole')?.value;
-  if(!code)return;const msg=document.getElementById('codeMsg');
+
+function togglePayments(){
+  const t=document.getElementById('payToggle');
+  const on=t.classList.toggle('on');
+  api('/api/owner/setting','POST',{key:'payments_enabled',value:on?'true':'false'}).catch(e=>alert(e.message));
+}
+
+async function savePaySettings(){
+  const price=document.getElementById('priceVal')?.value?.trim();
+  const currency=document.getElementById('currVal')?.value?.trim();
+  const msg=document.getElementById('paySetMsg');
   try{
-    const r=await api('/api/owner/add-code','POST',{code,grants_role:role2,type:'monthly'});
-    msg.textContent=r.status;msg.style.color='var(--win)';msg.style.display='block';
-    document.getElementById('newCodeVal').value='';
+    await Promise.all([api('/api/owner/setting','POST',{key:'premium_price',value:price}),api('/api/owner/setting','POST',{key:'premium_currency',value:currency})]);
+    msg.textContent='✓ Saved!';msg.style.color='var(--win)';msg.style.display='block';
   }catch(e){msg.textContent='Error: '+e.message;msg.style.color='var(--lose)';msg.style.display='block';}
 }
 
-// ── API ───────────────────────────────────────────────────────────────
+async function addCode(){
+  const code=document.getElementById('nCode')?.value?.trim();if(!code)return;
+  const role=document.getElementById('nRole')?.value;
+  const type=document.getElementById('nType')?.value;
+  const msg=document.getElementById('cMsg');
+  try{const r=await api('/api/owner/add-code','POST',{code,grants_role:role,type});msg.textContent=r.status;msg.style.color='var(--win)';msg.style.display='block';document.getElementById('nCode').value='';}
+  catch(e){msg.textContent='Error: '+e.message;msg.style.color='var(--lose)';msg.style.display='block';}
+}
+
+// API
 async function api(url,method='GET',body=null){
-  const opts={method,headers:{'Content-Type':'application/json',...(tok?{'Authorization':`Bearer ${tok}`,'x-device-id':getDeviceId()}:{})}};
+  const opts={method,headers:{'Content-Type':'application/json',...(tok?{'Authorization':`Bearer ${tok}`,'x-device-id':devId()}:{})}};
   if(body)opts.body=JSON.stringify(body);
   const r=await fetch(url,opts);const d=await r.json();
   if(!r.ok)throw new Error(d.detail||`Error ${r.status}`);
   return d;
 }
-
 function V(id){return document.getElementById(id)?.value?.trim()||'';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmt(t){
   return esc(t)
-    .replace(/^###\s+(.+)$/gm,'<h3 style="font-family:Syne,sans-serif;color:var(--a);margin:11px 0 4px;font-size:14px">$1</h3>')
-    .replace(/^##\s+(.+)$/gm,'<h3 style="font-family:Syne,sans-serif;color:var(--a);margin:11px 0 4px;font-size:14px">$1</h3>')
+    .replace(/^###\s+(.+)$/gm,'<h3 style="font-family:Syne,sans-serif;color:var(--a);margin:12px 0 4px;font-size:14px;font-weight:800">$1</h3>')
+    .replace(/^##\s+(.+)$/gm,'<h3 style="font-family:Syne,sans-serif;color:var(--a);margin:12px 0 4px;font-size:14px;font-weight:800">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/^---$/gm,'<hr style="border-color:var(--b);margin:10px 0">')
+    .replace(/^---+$/gm,'<hr/>')
     .replace(/^[-•]\s+(.+)$/gm,'<li>$1</li>')
     .replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>')
     .replace(/\n/g,'<br>');
 }
-
-// Restore language
-lang=localStorage.getItem('og_lang')||'en';
 </script>
 </body>
 </html>

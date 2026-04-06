@@ -1,15 +1,6 @@
 """
-OddsGPT v6 - Complete Backend
-- Owner / Operator / Premium / Free roles
-- Device fingerprint limiting (max 2 accounts per device)
-- Ban system (account / device / timed)
-- Monthly expiring promo codes + permanent OWNER/OPERATOR codes
-- Gmail SMTP email confirmation
-- Live data (Tavily) - lineups, injuries, form, match date/time
-- Persistent SQLite
-- Passwords visible to owner
+OddsGPT v7
 """
-
 import os, sqlite3, uuid, httpx, re, asyncio, hashlib, hmac, base64, json
 import random, string, smtplib
 from datetime import datetime, timedelta
@@ -28,7 +19,7 @@ DB_PATH       = os.getenv("DB_PATH", os.path.join(BASE_DIR, "oddsgpt.db"))
 
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY",      "")
 TAVILY_API_KEY    = os.getenv("TAVILY_API_KEY",     "")
-JWT_SECRET        = os.getenv("JWT_SECRET",         "OddsGPT_v6_secret_2025!")
+JWT_SECRET        = os.getenv("JWT_SECRET",         "OddsGPT_v7_secret!")
 OWNER_USERNAME    = os.getenv("OWNER_USERNAME",     "arkel")
 OPERATOR_PASSWORD = os.getenv("OPERATOR_PASSWORD",  "Operator2025!")
 GMAIL_USER        = os.getenv("GMAIL_USER",         "noreplyoddsgpt@gmail.com")
@@ -36,39 +27,30 @@ GMAIL_APP_PASS    = os.getenv("GMAIL_APP_PASS",     "")
 APP_URL           = os.getenv("APP_URL",            "http://localhost:8000")
 MONTHLY_CODE      = os.getenv("MONTHLY_CODE",       "ODDS2025")
 MAX_DEVICES       = int(os.getenv("MAX_DEVICES",    "2"))
+PAYPAL_CLIENT_ID  = os.getenv("PAYPAL_CLIENT_ID",   "")
+PAYPAL_SECRET     = os.getenv("PAYPAL_SECRET",      "")
+PAYPAL_MODE       = os.getenv("PAYPAL_MODE",        "sandbox")
 
 GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions"
 TAVILY_URL = "https://api.tavily.com/search"
-SDB_URL    = "https://www.thesportsdb.com/api/v1/json/3"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 FREE_LIMIT = 3
 
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    try:
-        conn.execute("PRAGMA journal_mode=WAL")
-    except sqlite3.DatabaseError:
-        conn.close()
-        os.remove(DB_PATH)
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
+    if os.path.exists(DB_PATH):
+        try:
+            t=sqlite3.connect(DB_PATH); t.execute("SELECT 1"); t.close()
+        except sqlite3.DatabaseError:
+            print(f"[DB] Corrupted — deleting {DB_PATH}")
+            try: os.remove(DB_PATH)
+            except: pass
+    conn=sqlite3.connect(DB_PATH)
+    conn.row_factory=sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 def init_db():
-    # Auto-recover from corrupted database file
-    if os.path.exists(DB_PATH):
-        try:
-            test = sqlite3.connect(DB_PATH)
-            test.execute("SELECT 1")
-            test.close()
-        except sqlite3.DatabaseError:
-            print(f"[DB] Corrupted database at {DB_PATH} — deleting and recreating.")
-            try:
-                os.remove(DB_PATH)
-            except Exception:
-                pass
     with get_conn() as c:
         c.executescript("""
             CREATE TABLE IF NOT EXISTS users (
@@ -90,7 +72,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
                 sport_tab TEXT DEFAULT 'all', title TEXT DEFAULT 'New Chat',
-                created_at TEXT, updated_at TEXT
+                created_at TEXT, updated_at TEXT, hidden INTEGER DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,31 +103,57 @@ def init_db():
             CREATE TABLE IF NOT EXISTS ban_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT, device_id TEXT, banned_by TEXT,
-                reason TEXT, expires_at TEXT, created_at TEXT
+                reason TEXT, expires_at TEXT, created_at TEXT,
+                active INTEGER DEFAULT 1
+            );
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY, value TEXT, updated_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL, paypal_order_id TEXT,
+                amount TEXT, currency TEXT DEFAULT 'USD',
+                status TEXT DEFAULT 'pending',
+                created_at TEXT, confirmed_at TEXT, confirmed_by TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_msg_sess  ON messages(session_id);
             CREATE INDEX IF NOT EXISTS idx_sess_user ON sessions(user_id);
             CREATE INDEX IF NOT EXISTS idx_bets_user ON saved_bets(user_id);
             CREATE INDEX IF NOT EXISTS idx_log_user  ON search_log(user_id);
         """)
-    _seed_codes()
+        for col in ["hidden"]:
+            try: c.execute(f"ALTER TABLE sessions ADD COLUMN {col} INTEGER DEFAULT 0")
+            except: pass
+        for col in ["active"]:
+            try: c.execute(f"ALTER TABLE ban_log ADD COLUMN {col} INTEGER DEFAULT 1")
+            except: pass
+    _seed()
 
-def _seed_codes():
-    now = datetime.now().isoformat()
-    eom = (datetime.now().replace(day=1)+timedelta(days=32)).replace(day=1,hour=0,minute=0,second=0).isoformat()
+def _seed():
+    now=datetime.now().isoformat()
+    eom=(datetime.now().replace(day=1)+timedelta(days=32)).replace(day=1,hour=0,minute=0,second=0).isoformat()
     with get_conn() as c:
-        c.execute("INSERT OR IGNORE INTO promo_codes VALUES (?,?,?,?,?)", (MONTHLY_CODE.upper(),"monthly","premium",eom,now))
-        c.execute("INSERT OR IGNORE INTO promo_codes VALUES (?,?,?,?,?)", ("OWNER","permanent","owner",None,now))
-        c.execute("INSERT OR IGNORE INTO promo_codes VALUES (?,?,?,?,?)", ("OPERATOR","permanent","operator",None,now))
+        c.execute("INSERT OR IGNORE INTO promo_codes VALUES (?,?,?,?,?)",(MONTHLY_CODE.upper(),"monthly","premium",eom,now))
+        c.execute("INSERT OR IGNORE INTO promo_codes VALUES (?,?,?,?,?)",("OWNER","permanent","owner",None,now))
+        c.execute("INSERT OR IGNORE INTO promo_codes VALUES (?,?,?,?,?)",("OPERATOR","permanent","operator",None,now))
+        for k,v in [("payments_enabled","false"),("premium_price","9.99"),("premium_currency","USD")]:
+            c.execute("INSERT OR IGNORE INTO settings (key,value,updated_at) VALUES (?,?,?)",(k,v,now))
+
+def get_setting(k):
+    with get_conn() as c: r=c.execute("SELECT value FROM settings WHERE key=?",(k,)).fetchone()
+    return r["value"] if r else None
+
+def set_setting(k,v):
+    with get_conn() as c: c.execute("INSERT OR REPLACE INTO settings (key,value,updated_at) VALUES (?,?,?)",(k,v,datetime.now().isoformat()))
 
 def hash_pw(p):
-    salt=os.urandom(16); key=hashlib.pbkdf2_hmac("sha256",p.encode(),salt,200000)
-    return base64.b64encode(salt+key).decode()
+    s=os.urandom(16); k=hashlib.pbkdf2_hmac("sha256",p.encode(),s,200000)
+    return base64.b64encode(s+k).decode()
 
 def check_pw(p,stored):
     try:
-        raw=base64.b64decode(stored.encode()); salt=raw[:16]; key=raw[16:]
-        return hmac.compare_digest(key,hashlib.pbkdf2_hmac("sha256",p.encode(),salt,200000))
+        r=base64.b64decode(stored.encode()); s=r[:16]; k=r[16:]
+        return hmac.compare_digest(k,hashlib.pbkdf2_hmac("sha256",p.encode(),s,200000))
     except: return False
 
 def rand_tok(n=40): return ''.join(random.choices(string.ascii_letters+string.digits,k=n))
@@ -191,8 +199,7 @@ def register_device(device_id,user_id):
         ex=c.execute("SELECT 1 FROM device_accounts WHERE device_id=? AND user_id=?",(device_id,user_id)).fetchone()
     if ex: return True
     if cnt>=MAX_DEVICES: return False
-    with get_conn() as c:
-        c.execute("INSERT OR IGNORE INTO device_accounts VALUES (?,?,?)",(device_id,user_id,datetime.now().isoformat()))
+    with get_conn() as c: c.execute("INSERT OR IGNORE INTO device_accounts VALUES (?,?,?)",(device_id,user_id,datetime.now().isoformat()))
     return True
 
 def get_device_count(device_id):
@@ -203,23 +210,32 @@ def is_device_banned(device_id):
     if not device_id: return False
     now=datetime.now().isoformat()
     with get_conn() as c:
-        r=c.execute("SELECT 1 FROM ban_log WHERE device_id=? AND (expires_at IS NULL OR expires_at>?) LIMIT 1",(device_id,now)).fetchone()
+        r=c.execute("SELECT 1 FROM ban_log WHERE device_id=? AND active=1 AND (expires_at IS NULL OR expires_at>?) LIMIT 1",(device_id,now)).fetchone()
     return bool(r)
 
 def ban_user(uid,reason,expires_at,by):
     update_user(uid,is_banned=1,ban_reason=reason,ban_expires=expires_at or "")
     with get_conn() as c:
-        c.execute("INSERT INTO ban_log (user_id,banned_by,reason,expires_at,created_at) VALUES (?,?,?,?,?)",(uid,by,reason,expires_at,datetime.now().isoformat()))
+        c.execute("INSERT INTO ban_log (user_id,banned_by,reason,expires_at,active,created_at) VALUES (?,?,?,?,1,?)",
+                  (uid,by,reason,expires_at,datetime.now().isoformat()))
 
 def ban_device(device_id,reason,expires_at,by):
     with get_conn() as c:
-        c.execute("INSERT INTO ban_log (device_id,banned_by,reason,expires_at,created_at) VALUES (?,?,?,?,?)",(device_id,by,reason,expires_at,datetime.now().isoformat()))
+        c.execute("INSERT INTO ban_log (device_id,banned_by,reason,expires_at,active,created_at) VALUES (?,?,?,?,1,?)",
+                  (device_id,by,reason,expires_at,datetime.now().isoformat()))
+
+def unban_user(uid):
+    update_user(uid,is_banned=0,ban_reason=None,ban_expires=None)
+    with get_conn() as c: c.execute("UPDATE ban_log SET active=0 WHERE user_id=?",(uid,))
+
+def unban_device(device_id):
+    with get_conn() as c: c.execute("UPDATE ban_log SET active=0 WHERE device_id=?",(device_id,))
 
 def check_ban(user):
     if not user.get("is_banned"): return None
     exp=user.get("ban_expires","")
     if exp and datetime.fromisoformat(exp)<datetime.now():
-        update_user(user["id"],is_banned=0,ban_reason=None,ban_expires=None); return None
+        unban_user(user["id"]); return None
     return user.get("ban_reason") or "Account banned."
 
 def refresh_user(user):
@@ -247,13 +263,13 @@ def apply_code(user,code):
     row=dict(row); exp=row.get("expires_at","")
     if exp and datetime.fromisoformat(exp)<datetime.now(): return False,"This code has expired."
     grants=row.get("grants_role","premium")
-    if user.get("role")=="owner": return True,"✅ You already have the highest access."
+    if user.get("role")=="owner": return True,"You already have the highest access."
     eom=(datetime.now().replace(day=1)+timedelta(days=32)).replace(day=1).isoformat()
     exp_date=eom if row.get("type")=="monthly" else None
     update_user(user["id"],role=grants,premium_source=code.lower(),premium_expires=exp_date)
-    msgs={"premium":f"🎉 Premium activated!{' Valid until '+exp_date[:10] if exp_date else ''}",
-          "operator":"🔧 Operator access granted!","owner":"👑 Owner access granted!"}
-    return True,msgs.get(grants,"✅ Access granted!")
+    msgs={"premium":f"Premium activated!{' Valid until '+exp_date[:10] if exp_date else ''}",
+          "operator":"Operator access granted!","owner":"Owner access granted!"}
+    return True,msgs.get(grants,"Access granted!")
 
 def make_jwt(uid,username,role):
     p=json.dumps({"uid":uid,"usr":username,"role":role,"exp":(datetime.now()+timedelta(days=30)).isoformat()},separators=(",",":"))
@@ -289,14 +305,19 @@ async def owner_user(user=Depends(get_user)):
     if not is_owner(user): raise HTTPException(403,"Owner access required.")
     return user
 
+# DB helpers
 def db_new_session(uid,sport_tab="all"):
     sid=str(uuid.uuid4())[:8]; now=datetime.now().isoformat()
-    with get_conn() as c: c.execute("INSERT INTO sessions VALUES (?,?,?,?,?,?)",(sid,uid,sport_tab,"New Chat",now,now))
+    with get_conn() as c: c.execute("INSERT INTO sessions (id,user_id,sport_tab,title,created_at,updated_at,hidden) VALUES (?,?,?,?,?,?,0)",(sid,uid,sport_tab,"New Chat",now,now))
     return sid
 
 def db_get_sessions(uid):
-    with get_conn() as c: rows=c.execute("SELECT id,sport_tab,title,created_at,updated_at FROM sessions WHERE user_id=? ORDER BY updated_at DESC LIMIT 80",(uid,)).fetchall()
+    with get_conn() as c:
+        rows=c.execute("SELECT id,sport_tab,title,created_at,updated_at FROM sessions WHERE user_id=? AND hidden=0 ORDER BY updated_at DESC LIMIT 80",(uid,)).fetchall()
     return [dict(r) for r in rows]
+
+def db_soft_delete(sid,uid):
+    with get_conn() as c: c.execute("UPDATE sessions SET hidden=1 WHERE id=? AND user_id=?",(sid,uid))
 
 def db_save_message(sid,uid,role,content,sport_tab="all"):
     now=datetime.now().isoformat()
@@ -310,7 +331,8 @@ def db_save_message(sid,uid,role,content,sport_tab="all"):
             if cur and cur["title"]=="New Chat": c.execute("UPDATE sessions SET title=? WHERE id=?",(title,sid))
 
 def db_get_history(sid,uid):
-    with get_conn() as c: rows=c.execute("SELECT role,content FROM messages WHERE session_id=? AND user_id=? ORDER BY created_at DESC LIMIT 20",(sid,uid)).fetchall()
+    with get_conn() as c:
+        rows=c.execute("SELECT role,content FROM messages WHERE session_id=? AND user_id=? ORDER BY created_at DESC LIMIT 20",(sid,uid)).fetchall()
     return [{"role":r["role"],"content":r["content"]} for r in reversed(rows)]
 
 def db_save_bets(sid,uid,bets):
@@ -326,7 +348,8 @@ def db_get_bets(sid):
     return [dict(r) for r in rows]
 
 def db_get_user_bets(uid):
-    with get_conn() as c: rows=c.execute("SELECT sb.*,s.title s_title FROM saved_bets sb LEFT JOIN sessions s ON sb.session_id=s.id WHERE sb.user_id=? ORDER BY sb.created_at DESC LIMIT 200",(uid,)).fetchall()
+    with get_conn() as c:
+        rows=c.execute("SELECT sb.*,s.title s_title FROM saved_bets sb LEFT JOIN sessions s ON sb.session_id=s.id WHERE sb.user_id=? ORDER BY sb.created_at DESC LIMIT 200",(uid,)).fetchall()
     return [dict(r) for r in rows]
 
 def db_log_search(uid,query,sport):
@@ -335,8 +358,16 @@ def db_log_search(uid,query,sport):
         c.execute("INSERT INTO search_log (user_id,query,sport,created_at) VALUES (?,?,?,?)",(uid,query,sport,now))
         c.execute("UPDATE users SET total_searches=total_searches+1 WHERE id=?",(uid,))
 
-def db_update_result(bet_id,result,uid):
-    with get_conn() as c: c.execute("UPDATE saved_bets SET result=? WHERE id=? AND user_id=?",(result,bet_id,uid))
+def db_get_hot_searched(sport=None,limit=20):
+    with get_conn() as c:
+        if sport and sport!="all":
+            rows=c.execute("SELECT query,sport,COUNT(*) cnt FROM search_log WHERE sport=? GROUP BY query ORDER BY cnt DESC LIMIT ?",(sport,limit)).fetchall()
+        else:
+            rows=c.execute("SELECT query,sport,COUNT(*) cnt FROM search_log GROUP BY query ORDER BY cnt DESC LIMIT ?",(limit,)).fetchall()
+    return [dict(r) for r in rows]
+
+def db_update_result(bid,result,uid):
+    with get_conn() as c: c.execute("UPDATE saved_bets SET result=? WHERE id=? AND user_id=?",(result,bid,uid))
 
 def db_save_parlay(uid,picks,odds,conf,note):
     now=datetime.now().isoformat()
@@ -352,63 +383,55 @@ def db_get_parlays(uid):
         result.append(d)
     return result
 
-def _send_email_sync(to,subject,html):
-    if not GMAIL_APP_PASS: print(f"[Email] No GMAIL_APP_PASS. Would send: {subject} to {to}"); return
-    try:
-        msg=MIMEMultipart("alternative"); msg["Subject"]=subject; msg["From"]=f"OddsGPT <{GMAIL_USER}>"; msg["To"]=to
-        msg.attach(MIMEText(html,"html"))
-        with smtplib.SMTP_SSL("smtp.gmail.com",465) as s:
-            s.login(GMAIL_USER,GMAIL_APP_PASS); s.sendmail(GMAIL_USER,[to],msg.as_string())
-    except Exception as e: print(f"[Email] {e}")
+# Email - dual method SSL + STARTTLS
+def _send_sync(to,subject,html):
+    if not GMAIL_APP_PASS:
+        print(f"[Email] No GMAIL_APP_PASS → {subject} → {to}"); return
+    errors=[]
+    for method in ["ssl","starttls"]:
+        try:
+            msg=MIMEMultipart("alternative")
+            msg["Subject"]=subject; msg["From"]=f"OddsGPT <{GMAIL_USER}>"; msg["To"]=to
+            msg["Message-ID"]=f"<{uuid.uuid4()}@oddsgpt.com>"
+            msg.attach(MIMEText(html,"html","utf-8"))
+            if method=="ssl":
+                with smtplib.SMTP_SSL("smtp.gmail.com",465,timeout=20) as s:
+                    s.login(GMAIL_USER,GMAIL_APP_PASS); s.sendmail(GMAIL_USER,[to],msg.as_string())
+            else:
+                with smtplib.SMTP("smtp.gmail.com",587,timeout=20) as s:
+                    s.ehlo(); s.starttls(); s.ehlo(); s.login(GMAIL_USER,GMAIL_APP_PASS)
+                    s.sendmail(GMAIL_USER,[to],msg.as_string())
+            print(f"[Email] OK {method} → {to}"); return
+        except Exception as e: errors.append(f"{method}:{e}"); continue
+    print(f"[Email] FAILED {to}: {errors}")
 
 async def send_email(to,subject,html):
-    loop=asyncio.get_event_loop()
-    await loop.run_in_executor(None,_send_email_sync,to,subject,html)
+    await asyncio.get_event_loop().run_in_executor(None,_send_sync,to,subject,html)
 
-ETPL="""<div style="font-family:'Segoe UI',sans-serif;max-width:520px;margin:auto;background:#07090e;color:#dde4f0;border-radius:14px;overflow:hidden;border:1px solid #1c2535">
-<div style="background:#0c1018;padding:18px 24px;border-bottom:1px solid #1c2535"><span style="font-size:22px;font-weight:900;color:#f0c040">Odds</span><span style="font-size:22px;font-weight:900;color:#dde4f0">GPT</span></div>
-<div style="padding:24px">{body}<p style="color:#4a5a70;font-size:11px;margin-top:18px;padding-top:12px;border-top:1px solid #1c2535">OddsGPT AI Betting Analyst. For entertainment only. / Vetëm për argëtim.</p></div></div>"""
-def ebtn(u,t): return f'<a href="{u}" style="display:inline-block;background:#f0c040;color:#000;padding:11px 24px;border-radius:8px;text-decoration:none;font-weight:700;margin:14px 0">{t}</a>'
+TPL="""<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:auto;background:#07090e;color:#dde4f0;border-radius:14px;overflow:hidden;border:1px solid #1c2535"><div style="background:#0c1018;padding:18px 24px;border-bottom:1px solid #1c2535;display:flex;align-items:center;gap:10px"><span style="font-size:22px;font-weight:900;color:#f0c040">Odds</span><span style="font-size:22px;font-weight:900;color:#dde4f0">GPT</span><span style="font-size:10px;color:#4a5a70;margin-left:auto;font-family:monospace;letter-spacing:1px">AI BETTING ANALYST</span></div><div style="padding:28px">{body}<p style="color:#4a5a70;font-size:11px;margin-top:22px;padding-top:14px;border-top:1px solid #1c2535">OddsGPT · For entertainment only · 18+ · Bet responsibly<br>Vetëm për argëtim · 18+ · Basto me përgjegjësi</p></div></div>"""
+def ebtn(u,t,c="#f0c040"): return f'<a href="{u}" style="display:inline-block;background:{c};color:#000;padding:12px 26px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin:16px 0">{t}</a>'
 
 async def send_verify(email,token):
     link=f"{APP_URL}/api/auth/verify/{token}"
-    body=f"<h2 style='color:#f0c040;margin-top:0'>Verify your email 🎯 / Verifiko email-in</h2><p>Click to activate your OddsGPT account:</p>{ebtn(link,'Verify / Verifiko')}<p style='color:#4a5a70;font-size:12px'>Expires 24h / Skadon 24h</p>"
-    await send_email(email,"Verify your OddsGPT account",ETPL.format(body=body))
+    body=f'<h2 style="color:#f0c040;margin-top:0">Verify your email 🎯</h2><p style="color:#8a9ab0">Activate your OddsGPT account / Aktivizo llogarinë:</p>{ebtn(link,"✓ Verify Account / Verifiko")}<p style="color:#4a5a70;font-size:12px">Expires 24h · Skadon 24h</p>'
+    await send_email(email,"[OddsGPT] Verify your account",TPL.format(body=body))
 
 async def send_reset(email,token):
     link=f"{APP_URL}/reset?token={token}"
-    body=f"<h2 style='color:#f0c040;margin-top:0'>Reset password 🔑 / Rivendos fjalëkalimin</h2>{ebtn(link,'Reset / Rivendos')}<p style='color:#4a5a70;font-size:12px'>Expires 1h</p>"
-    await send_email(email,"OddsGPT - Reset password",ETPL.format(body=body))
+    body=f'<h2 style="color:#f0c040;margin-top:0">Reset Password 🔑</h2><p style="color:#8a9ab0">Expires in 1 hour:</p>{ebtn(link,"Reset Password","#e05c20")}<p style="color:#4a5a70;font-size:12px">Ignore if you didn\'t request this.</p>'
+    await send_email(email,"[OddsGPT] Reset your password",TPL.format(body=body))
 
-SPORT_LEAGUES={"football":["4328","4335","4331","4332","4334"],"basketball":["4387"],"hockey":["4380"],"baseball":["4424"],"american football":["4391"]}
+async def send_payment_confirm(email,username,amount):
+    body=f'<h2 style="color:#f0c040;margin-top:0">Payment Received! 🎉</h2><p style="color:#8a9ab0">Hi <strong style="color:#dde4f0">{username}</strong>, your payment of <strong style="color:#f0c040">${amount}</strong> has been received. Premium will be activated shortly.</p>'
+    await send_email(email,"[OddsGPT] Payment received",TPL.format(body=body))
 
-async def get_hot_games(sport="all"):
-    if sport=="ufc": return [{"home":"Next UFC Fight","away":"TBD","date":"","time":"","sport":"ufc","query":"ufc next fight card predictions betting odds this weekend"}]
-    leagues=[]
-    if sport=="all":
-        for v in SPORT_LEAGUES.values(): leagues.extend(v[:2])
-    else: leagues=SPORT_LEAGUES.get(sport,SPORT_LEAGUES["football"])
-    seen=set(); games=[]
-    async with httpx.AsyncClient(timeout=10.0) as c:
-        results=await asyncio.gather(*[c.get(f"{SDB_URL}/eventsnextleague.php?id={lid}") for lid in leagues[:6]],return_exceptions=True)
-    for r in results:
-        if isinstance(r,Exception): continue
-        try:
-            for ev in (r.json().get("events") or [])[:2]:
-                h=(ev.get("strHomeTeam") or "").strip(); a=(ev.get("strAwayTeam") or "").strip()
-                k=f"{h}|{a}"
-                if not h or not a or k in seen: continue
-                seen.add(k)
-                sp=(ev.get("strSport") or "Football").lower()
-                games.append({"home":h,"away":a,"date":ev.get("dateEvent",""),"time":ev.get("strTime",""),"sport":sp,"query":f"{sp} - {h} vs {a}"})
-        except: continue
-    return games[:9]
-
-async def groq_call(messages,max_tokens=2500):
-    async with httpx.AsyncClient(timeout=55.0) as c:
+# Hot games via AI+Tavily
+async def groq_call(messages,max_tokens=1000):
+    if not GROQ_API_KEY: return ""
+    async with httpx.AsyncClient(timeout=30.0) as c:
         r=await c.post(GROQ_URL,headers={"Authorization":f"Bearer {GROQ_API_KEY}","Content-Type":"application/json"},
-            json={"model":GROQ_MODEL,"messages":messages,"temperature":0.25,"max_tokens":max_tokens,"stream":False})
-    if r.status_code!=200: raise Exception(f"Groq error {r.status_code}: {r.text}")
+            json={"model":GROQ_MODEL,"messages":messages,"temperature":0.2,"max_tokens":max_tokens,"stream":False})
+    if r.status_code!=200: raise Exception(f"Groq error {r.status_code}")
     return r.json()["choices"][0]["message"]["content"]
 
 async def tavily_one(sess,query):
@@ -422,46 +445,65 @@ async def tavily_one(sess,query):
         return "\n".join(parts)
     except Exception as e: print(f"[T] {e}"); return ""
 
+SPORT_COUNTS={"football":4,"basketball":4,"tennis":4,"hockey":4,"baseball":4,"american football":4,"ufc":1}
+
+async def fetch_sport_games(sport,count):
+    today=datetime.now().strftime("%Y-%m-%d"); year=datetime.now().strftime("%Y")
+    queries={
+        "ufc":f"UFC next event main event fight card {today} {year}",
+        "football":f"biggest football soccer matches this week {today} Premier League Champions League La Liga",
+        "basketball":f"NBA biggest games this week {today} {year}",
+        "tennis":f"ATP WTA tennis top matches this week {today} {year}",
+        "hockey":f"NHL biggest games this week {today} {year}",
+        "baseball":f"MLB biggest games this week {today} {year}",
+        "american football":f"NFL upcoming games schedule {today} {year}",
+    }
+    query=queries.get(sport,f"{sport} biggest matches this week {today}")
+    try:
+        async with httpx.AsyncClient(timeout=12.0) as sess:
+            raw=await tavily_one(sess,query)
+        if not raw: return []
+        prompt=f"""From this sports news extract exactly {count} upcoming match(es) for {sport}.
+Return ONLY a JSON array, no explanation:
+[{{"home":"Team A","away":"Team B","date":"2026-04-08","time":"20:00","sport":"{sport}","competition":"League"}}]
+For UFC return only the main event. If fewer matches found return what you have.
+NEWS:\n{raw[:1800]}"""
+        resp=await groq_call([{"role":"user","content":prompt}],max_tokens=400)
+        resp=re.sub(r'^```(?:json)?','',resp.strip()).strip().rstrip('`').strip()
+        games=json.loads(resp)
+        if not isinstance(games,list): return []
+        result=[]
+        for g in games[:count]:
+            h=g.get("home","").strip(); a=g.get("away","").strip()
+            if h and a:
+                result.append({"home":h,"away":a,"date":g.get("date",""),"time":g.get("time",""),
+                                "sport":sport,"competition":g.get("competition",""),
+                                "query":f"{sport} - {h} vs {a}"})
+        return result
+    except Exception as e:
+        print(f"[HotGames:{sport}] {e}"); return []
+
+async def get_hot_games(sport="all"):
+    if sport=="all":
+        tasks=[fetch_sport_games(sp,1 if sp!="ufc" else 1) for sp in SPORT_COUNTS]
+        results=await asyncio.gather(*tasks,return_exceptions=True)
+        games=[]
+        for r in results:
+            if isinstance(r,list): games.extend(r[:1])
+        return games[:8]
+    count=SPORT_COUNTS.get(sport,4)
+    return await fetch_sport_games(sport,count)
+
+# Match analysis
 async def search_match(team1,team2,sport):
-    if not TAVILY_API_KEY: return "No Tavily key. Add at app.tavily.com for live data."
-    today=datetime.now().strftime("%Y-%m-%d")
-    year=datetime.now().strftime("%Y")
-    matchup=f"{team1} vs {team2}"
-
+    if not TAVILY_API_KEY: return "No Tavily key set."
+    today=datetime.now().strftime("%Y-%m-%d"); year=datetime.now().strftime("%Y"); matchup=f"{team1} vs {team2}"
     if sport in("ufc","mma"):
-        queries=[
-            ("📅 EVENT DATE/TIME",   f"{matchup} UFC MMA fight date time location {today}"),
-            ("🥊 FIGHTER RECORDS",   f"{team1} {team2} UFC MMA current record 2025 2026"),
-            ("💪 FIGHTER STATS",     f"{team1} striking grappling stats reach UFC {today}"),
-            ("🏋️ CAMP & WEIGHT",     f"{team1} {team2} training camp weight cut news {today}"),
-            ("🎰 FIGHT ODDS",        f"{matchup} UFC betting odds {today}"),
-            ("📰 LATEST NEWS",       f"{team1} {team2} UFC fight news {today}"),
-        ]
+        queries=[("📅 EVENT",f"{matchup} UFC MMA fight date time {today}"),("🥊 RECORDS",f"{team1} {team2} UFC MMA record {year}"),("💪 STATS",f"{team1} striking grappling stats {today}"),("🏋️ CAMP",f"{team1} {team2} training camp {today}"),("🎰 ODDS",f"{matchup} UFC odds {today}"),("📰 NEWS",f"{team1} {team2} UFC news {today}")]
     elif sport in("football","soccer"):
-        queries=[
-            ("📅 MATCH DATE/TIME",   f"{matchup} match date kickoff time venue {today}"),
-            ("📋 CONFIRMED LINEUP",  f"{matchup} confirmed lineup starting XI {today}"),
-            ("📋 PREDICTED LINEUP",  f"{matchup} predicted lineup {year} current squad"),
-            ("👥 CURRENT SQUAD",     f"{team1} current squad players {year} roster"),
-            ("👥 CURRENT SQUAD 2",   f"{team2} current squad players {year} roster"),
-            ("🏥 INJURIES OUT",      f"{team1} {team2} injuries suspended unavailable OUT {today}"),
-            ("🔢 FORMATION",         f"{matchup} formation tactical setup {today}"),
-            ("📊 RECENT FORM",       f"{team1} last 5 matches results {today}"),
-            ("📊 RECENT FORM 2",     f"{team2} last 5 matches results {today}"),
-            ("⚔️ HEAD TO HEAD",      f"{matchup} head to head history H2H results"),
-            ("🎰 ODDS & TIPS",       f"{matchup} betting odds tips {today}"),
-            ("📈 STATS",             f"{matchup} xG BTTS over 2.5 stats {today}"),
-        ]
+        queries=[("📅 DATE/TIME",f"{matchup} match date kickoff venue {today}"),("📋 CONFIRMED LINEUP",f"{matchup} confirmed lineup starting XI {today}"),("📋 PREDICTED LINEUP",f"{matchup} predicted lineup {year}"),("👥 SQUAD 1",f"{team1} current squad players {year}"),("👥 SQUAD 2",f"{team2} current squad players {year}"),("🏥 INJURIES",f"{team1} {team2} injuries suspended OUT {today}"),("🔢 TACTICS",f"{matchup} formation tactics {today}"),("📊 FORM 1",f"{team1} last 5 results form {today}"),("📊 FORM 2",f"{team2} last 5 results form {today}"),("⚔️ H2H",f"{matchup} head to head history"),("🎰 ODDS",f"{matchup} betting odds {today}"),("📈 STATS",f"{matchup} xG BTTS over 2.5 {today}")]
     else:
-        queries=[
-            ("📅 DATE/TIME",         f"{matchup} {sport} date time {today}"),
-            ("👥 CURRENT ROSTERS",   f"{team1} {team2} {sport} current roster players {year}"),
-            ("🏥 INJURIES",          f"{team1} {team2} {sport} injuries {today}"),
-            ("📊 FORM & H2H",        f"{matchup} {sport} form results head to head {today}"),
-            ("🎰 ODDS & TIPS",       f"{matchup} {sport} betting odds {today}"),
-            ("📈 STATS",             f"{matchup} {sport} statistics {today}"),
-        ]
-
+        queries=[("📅 DATE",f"{matchup} {sport} date {today}"),("👥 ROSTERS",f"{team1} {team2} {sport} current roster {year}"),("🏥 INJURIES",f"{team1} {team2} injuries {today}"),("📊 FORM",f"{matchup} form {today}"),("🎰 ODDS",f"{matchup} {sport} odds {today}"),("📈 STATS",f"{matchup} {sport} stats {today}")]
     async with httpx.AsyncClient(timeout=20.0) as sess:
         results=await asyncio.gather(*[tavily_one(sess,q) for _,q in queries],return_exceptions=True)
     parts=[]
@@ -483,79 +525,49 @@ async def needs_clarify(msg,t1,t2):
     if t1 and t2 and len(t1)>1 and len(t2)>1: return None
     if re.search(r"vs?\.?\s+[A-Za-z]",msg,re.IGNORECASE): return None
     try:
-        r=await groq_call([{"role":"user","content":f'User: "{msg[:200]}". Identify sports match? Reply PROCEED or CLARIFY: [question]'}],max_tokens=60)
+        r=await groq_call([{"role":"user","content":f'User: "{msg[:200]}". Identify sports match? PROCEED or CLARIFY: [question]'}],max_tokens=60)
         if r.strip().upper().startswith("CLARIFY:"): return r.strip()[8:].strip()
     except: pass
     return None
 
-SYSTEM_PROMPT="""You are OddsGPT — an elite professional sports betting analyst.
+FOOTBALL_SECTION="""**🔢 FORMATION & TACTICS** — From live data only. Analyze tactical matchup.
+**📋 LINEUPS** — ONLY from live data. Label CONFIRMED or PREDICTED."""
+UFC_SECTION="""**🥊 RECORDS** — Current record from live data. **💪 MATCHUP** — Style analysis. **🏋️ CAMP** — Weight cut, training news."""
+GENERIC_SECTION="""**📋 LINEUP** — From live data. Note key absences."""
+
+def get_sport_section(sport):
+    if sport in("football","soccer"): return FOOTBALL_SECTION
+    if sport in("ufc","mma"):        return UFC_SECTION
+    return GENERIC_SECTION
+
+SYSTEM_PROMPT=r"""You are OddsGPT — elite sports betting analyst.
 Today: {date} | Sport: {sport}
 
-╔══════════════════════════════════════════════════════════╗
-║  ⛔ ABSOLUTE RULE — READ BEFORE ANYTHING ELSE            ║
-║  Your training data about player locations is WRONG.     ║
-║  Players transfer clubs every season.                    ║
-║  Henderson left Liverpool. Messi/Neymar left PSG.        ║
-║  Ramos left PSG. Many others have moved.                 ║
-║  YOU MUST use ONLY the LIVE DATA below for:              ║
-║  • Current squad / who plays for which team              ║
-║  • Lineups and formations                                ║
-║  • Injuries and suspensions                              ║
-║  • Recent form and results                               ║
-║  If a player is NOT mentioned in the live data,          ║
-║  DO NOT include them. Write "not confirmed in live data" ║
-╚══════════════════════════════════════════════════════════╝
+CRITICAL RULE: Your training data about current squads is OUTDATED.
+Players transfer clubs constantly. Messi/Neymar left PSG. Henderson left Liverpool.
+USE ONLY the LIVE DATA below for: current squads, lineups, injuries, form, results.
+If a player/fact is NOT in live data — DO NOT include it.
 
-=== LIVE DATA FROM INTERNET (your ONLY source for current facts) ===
+=== LIVE DATA ===
 {live_data}
-=== END OF LIVE DATA ===
-
-Now write your analysis using ONLY what is in the live data above:
+=== END ===
 
 {sport_section}
 
-**📅 MATCH DATE & TIME** — State exact date, time and venue from live data. Format: "Match: [Date] at [Time] — [Venue]". If not in live data write: "Date/time not yet confirmed."
+📅 MATCH DATE & TIME — From live data. Format: "[Date] at [Time] — [Venue]". If missing: "Not yet confirmed."
+📊 CURRENT FORM — Last 5 results each team. W/D/L + score. From live data only.
+⚔️ HEAD TO HEAD — Recent H2H. Who dominates?
+🏥 INJURIES — ONLY from live data. If none: "No confirmed injuries in live data."
+📋 LINEUPS — ONLY from live data. Label CONFIRMED or PREDICTED.
+💰 ODDS — From live data. Best value.
+📈 KEY STATS — BTTS rate, Over 2.5, avg goals, xG.
+💡 EXPERT TIPS — What tipsters say.
 
-**📊 CURRENT FORM** — Last 5 results for EACH team/fighter. Use ONLY results from live data above. Format each result as: W/D/L Score. If not in live data write: "Form not available in live data."
+🎯 MY CONCLUSION: 4-6 sentences. "In my opinion..." Be specific about markets and reasoning.
 
-**⚔️ HEAD TO HEAD** — Recent H2H meetings from live data only. Who has the historical edge?
-
-**🏥 INJURIES & SUSPENSIONS** — List ONLY players confirmed OUT or DOUBTFUL from the live data above. If a player is not mentioned in live data as injured, do NOT add them. If no injuries confirmed write: "No confirmed injuries in live data."
-
-**📋 LINEUPS** — Use ONLY lineups found in live data. Clearly label: CONFIRMED (if club announced) or PREDICTED (if from prediction sites). Do NOT invent players from memory.
-
-**💰 ODDS** — Current bookmaker odds from live data. State best value bet.
-
-**📈 KEY STATS** — BTTS rate, Over 2.5 goals rate, average goals per game (from live data).
-
-**💡 EXPERT CONSENSUS** — What do prediction sites and tipsters say?
-
----
-🎯 MY CONCLUSION:
-Write 4-6 sentences of direct, confident advice. Start with "In my opinion..."
-Tell the client exactly: what to bet, what odds to target, what to avoid, and why.
-Base this ONLY on the live data above.
----
-
-Then write your bets at the very end, one per line, EXACTLY in this format:
-BET: [pick] | TYPE: [1X2/BTTS/Over-Under/Handicap/etc] | CONFIDENCE: [0-100] | RISK: [Low/Medium/High] | ODDS: [range] | MATCH: [Team A vs Team B] | REASON: [one sentence using live data]
-
-Give 4-6 BET lines covering different markets."""
-
-FOOTBALL_EXTRA="""**🔢 FORMATION & TACTICS**
-State both teams' formation from live data. Analyze tactical matchup, key positional battles, which system has the advantage.
-**📋 LINEUPS** — List from live data. Note if confirmed by club or just predicted."""
-
-UFC_EXTRA="""**🥊 FIGHTER RECORDS** — Current record from live data
-**💪 MATCHUP** — Striker vs grappler advantage, where this fight gets decided
-**🏋️ CAMP NEWS** — Weight cut, training updates from live data"""
-
-GENERIC_EXTRA="""**📋 LINEUP** — Expected starters from live data. Note key absences."""
-
-def get_sport_section(sport):
-    if sport in("football","soccer"): return FOOTBALL_EXTRA
-    if sport in("ufc","mma"):        return UFC_EXTRA
-    return GENERIC_EXTRA
+Bets (one per line at end):
+BET: [pick] | TYPE: [1X2/BTTS/Over-Under/Handicap] | CONFIDENCE: [0-100] | RISK: [Low/Medium/High] | ODDS: [range] | MATCH: [Team A vs Team B] | REASON: [one sentence]
+Give 4-6 BET lines."""
 
 def parse_bets(text):
     bets=[]
@@ -579,15 +591,36 @@ async def build_parlay(bets,uid):
     if len(bets)<2: return {}
     picks=sorted([b for b in bets if b["risk"]!="High"],key=lambda x:x["confidence"],reverse=True)[:3]
     if len(picks)<2: picks=sorted(bets,key=lambda x:x["confidence"],reverse=True)[:3]
-    pick_strs=[f"{b['pick']} ({b.get('match','')[:18]})" for b in picks]
+    strs=[f"{b['pick']} ({b.get('match','')[:18]})" for b in picks]
     conf=int(sum(b["confidence"] for b in picks)/len(picks)*0.75)
     try: odds=f"~{round(1.85**len(picks),2):.2f}"
     except: odds="N/A"
-    db_save_parlay(uid,pick_strs,odds,conf,f"{len(picks)}-leg parlay — small stake only.")
-    return {"picks":pick_strs,"combined_odds":odds,"confidence":conf,"note":f"{len(picks)}-leg parlay — small stake only."}
+    db_save_parlay(uid,strs,odds,conf,f"{len(picks)}-leg parlay — small stake only.")
+    return {"picks":strs,"combined_odds":odds,"confidence":conf,"note":f"{len(picks)}-leg parlay — small stake only."}
 
+# PayPal
+async def _pp_token():
+    base="https://api-m.paypal.com" if PAYPAL_MODE=="live" else "https://api-m.sandbox.paypal.com"
+    async with httpx.AsyncClient(timeout=15.0) as c:
+        r=await c.post(f"{base}/v1/oauth2/token",auth=(PAYPAL_CLIENT_ID,PAYPAL_SECRET),headers={"Accept":"application/json"},data={"grant_type":"client_credentials"})
+    if r.status_code==200: return r.json().get("access_token",""),base
+    raise Exception(f"PayPal auth failed")
+
+async def create_pp_order(amount,currency="USD"):
+    tok,base=await _pp_token()
+    async with httpx.AsyncClient(timeout=15.0) as c:
+        r=await c.post(f"{base}/v2/checkout/orders",headers={"Authorization":f"Bearer {tok}","Content-Type":"application/json"},
+            json={"intent":"CAPTURE","purchase_units":[{"amount":{"currency_code":currency,"value":amount},"description":"OddsGPT Premium"}],
+                  "application_context":{"return_url":f"{APP_URL}/payment-success","cancel_url":f"{APP_URL}"}})
+    if r.status_code in(200,201):
+        data=r.json()
+        url=next((l["href"] for l in data.get("links",[]) if l.get("rel")=="approve"),"")
+        return data.get("id",""),url
+    raise Exception(f"PayPal order failed: {r.text}")
+
+# App
 init_db()
-app=FastAPI(title="OddsGPT",version="6.0")
+app=FastAPI(title="OddsGPT",version="7.0")
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
 app.mount("/static",StaticFiles(directory=FRONTEND_PATH),name="static")
 
@@ -600,14 +633,17 @@ class SessReq(BaseModel):   sport_tab:str="all"
 class BetReq(BaseModel):    bet_id:int; result:str
 class EmailReq(BaseModel):  email:str
 class BanReq(BaseModel):    username:str=""; device_id:str=""; reason:str; expires_at:str=""
+class UnbanReq(BaseModel):  username:str=""; device_id:str=""
 class RoleReq(BaseModel):   username:str; role:str
 class CodeAddReq(BaseModel):code:str; grants_role:str="premium"; type:str="monthly"; expires_at:str=""
+class SettingReq(BaseModel):key:str; value:str
 
 @app.get("/")
 async def root(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
-
 @app.get("/reset")
 async def reset_page(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
+@app.get("/payment-success")
+async def pay_ok(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
 
 @app.post("/api/auth/register")
 async def register(req:RegReq,bg:BackgroundTasks):
@@ -617,13 +653,13 @@ async def register(req:RegReq,bg:BackgroundTasks):
     if get_user_by_email(req.email): raise HTTPException(400,"Email already registered")
     if req.device_id:
         if is_device_banned(req.device_id): raise HTTPException(403,"This device has been banned.")
-        if get_device_count(req.device_id)>=MAX_DEVICES: raise HTTPException(400,f"This device already has {MAX_DEVICES} accounts. Maximum reached.")
+        if get_device_count(req.device_id)>=MAX_DEVICES: raise HTTPException(400,f"This device already has {MAX_DEVICES} accounts.")
     try:
         user=create_user(req.username,req.email,req.password)
         if req.device_id: register_device(req.device_id,user["id"])
         tok=make_jwt(user["id"],user["username"],user["role"])
         if GMAIL_APP_PASS: bg.add_task(send_verify,req.email,user["verify_token"])
-        return {"token":tok,"username":user["username"],"role":user["role"],"email_sent":bool(GMAIL_APP_PASS),"needs_verify":bool(GMAIL_APP_PASS)}
+        return {"token":tok,"username":user["username"],"role":user["role"],"email_sent":bool(GMAIL_APP_PASS)}
     except Exception as e:
         if "UNIQUE" in str(e): raise HTTPException(400,"Username or email already exists")
         raise HTTPException(500,str(e))
@@ -650,13 +686,20 @@ async def verify_email(token:str):
     update_user(user["id"],is_verified=1,verify_token=None)
     return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
 
+@app.post("/api/auth/resend-verify")
+async def resend_verify(bg:BackgroundTasks,user=Depends(get_user)):
+    if user.get("is_verified"): return {"message":"Already verified"}
+    vtok=rand_tok(); update_user(user["id"],verify_token=vtok)
+    bg.add_task(send_verify,user["email"],vtok)
+    return {"message":"Verification email sent"}
+
 @app.post("/api/auth/forgot")
 async def forgot(req:EmailReq,bg:BackgroundTasks):
     user=get_user_by_email(req.email)
     if user:
         tok=rand_tok(); exp=(datetime.now()+timedelta(hours=1)).isoformat()
         update_user(user["id"],reset_token=tok,reset_expires=exp)
-        if GMAIL_APP_PASS: bg.add_task(send_reset,req.email,tok)
+        bg.add_task(send_reset,req.email,tok)
     return {"message":"If that email exists, a reset link was sent."}
 
 @app.post("/api/auth/reset")
@@ -666,7 +709,7 @@ async def reset_pw(req:ResetReq):
     if datetime.fromisoformat(user["reset_expires"])<datetime.now(): raise HTTPException(400,"Link expired")
     if len(req.password)<6: raise HTTPException(400,"Password min 6 characters")
     update_user(user["id"],password_plain=req.password,password_hash=hash_pw(req.password),reset_token=None,reset_expires=None)
-    return {"message":"Password reset successfully. You can now log in."}
+    return {"message":"Password reset successfully."}
 
 @app.post("/api/auth/apply-code")
 async def apply_code_route(req:CodeReq,user=Depends(get_user)):
@@ -683,14 +726,11 @@ async def me(user=Depends(get_user)):
             "daily_used":used,"daily_limit":FREE_LIMIT,"total_searches":user.get("total_searches",0),
             "premium_expires":user.get("premium_expires",""),"email":user.get("email","")}
 
-@app.get("/")
-async def root2(): return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
-
 @app.post("/api/chat")
 async def chat(req:ChatReq,user=Depends(get_user)):
     try:
         if not check_usage(user):
-            return JSONResponse({"response":f"⛔ **Daily limit reached** ({FREE_LIMIT} analyses/day).\n\nEnter a promo code in your **Profile** to unlock Premium.\n\n**⛔ Kufiri ditor u arrit** ({FREE_LIMIT} analiza/ditë). Fut kodin promo në **Profil**.","confidence":None,"bets":[],"parlay":{},"limit_reached":True})
+            return JSONResponse({"response":f"⛔ Daily limit reached ({FREE_LIMIT}/day).\nEnter a promo code in Profile for Premium.\n\n⛔ Kufiri ditor u arrit ({FREE_LIMIT}/ditë).","confidence":None,"bets":[],"parlay":{},"limit_reached":True})
         history=db_get_history(req.session_id,user["id"])
         t1,t2,sport=extract_match(req.message)
         q=await needs_clarify(req.message,t1,t2)
@@ -708,7 +748,7 @@ async def chat(req:ChatReq,user=Depends(get_user)):
         full=await groq_call(msgs,max_tokens=2500)
         bets=parse_bets(full)
         clean="\n".join(l for l in full.split("\n") if not l.strip().upper().startswith("BET:")).strip()
-        prefix=f"🌐 *Live data searched — {t1} vs {t2}*\n\n" if has_live else "📚 *Training knowledge only — add Tavily key for live data*\n\n"
+        prefix=f"🌐 *Live data searched — {t1} vs {t2}*\n\n" if has_live else "📚 *Training knowledge only*\n\n"
         final=prefix+clean
         db_save_message(req.session_id,user["id"],"user",req.message,req.sport_tab)
         db_save_message(req.session_id,user["id"],"assistant",final,req.sport_tab)
@@ -716,7 +756,8 @@ async def chat(req:ChatReq,user=Depends(get_user)):
         parlay=await build_parlay(bets,user["id"]) if len(bets)>=2 else {}
         return JSONResponse({"response":final,"confidence":max((b["confidence"] for b in bets),default=None),"bets":bets,"parlay":parlay})
     except Exception as e:
-        print(f"[ERR] {e}"); return JSONResponse({"response":f"⚠️ Error: {str(e)}","confidence":None,"bets":[],"parlay":{}})
+        print(f"[ERR] {e}")
+        return JSONResponse({"response":f"⚠️ Error: {str(e)}","confidence":None,"bets":[],"parlay":{}})
 
 @app.get("/api/sessions")
 async def get_sessions(user=Depends(get_user)): return {"sessions":db_get_sessions(user["id"])}
@@ -726,6 +767,10 @@ async def get_session(sid:str,user=Depends(get_user)): return {"history":db_get_
 
 @app.post("/api/sessions/new")
 async def new_session(req:SessReq,user=Depends(get_user)): return {"session_id":db_new_session(user["id"],req.sport_tab)}
+
+@app.delete("/api/sessions/{sid}")
+async def delete_session(sid:str,user=Depends(get_user)):
+    db_soft_delete(sid,user["id"]); return {"status":"deleted"}
 
 @app.get("/api/dashboard")
 async def dashboard(user=Depends(get_user)):
@@ -741,6 +786,26 @@ async def bet_result(req:BetReq,user=Depends(get_user)):
 @app.get("/api/hot-games")
 async def hot_games(sport:str="all"): return {"games":await get_hot_games(sport)}
 
+@app.get("/api/payment/settings")
+async def pay_settings():
+    return {"enabled":get_setting("payments_enabled")=="true","price":get_setting("premium_price"),"currency":get_setting("premium_currency"),"paypal_client_id":PAYPAL_CLIENT_ID}
+
+@app.post("/api/payment/create-order")
+async def create_order(user=Depends(get_user)):
+    if get_setting("payments_enabled")!="true": raise HTTPException(400,"Payments disabled.")
+    if not PAYPAL_CLIENT_ID or not PAYPAL_SECRET: raise HTTPException(500,"PayPal not configured.")
+    amount=get_setting("premium_price") or "9.99"; currency=get_setting("premium_currency") or "USD"
+    try:
+        order_id,approve_url=await create_pp_order(amount,currency)
+        with get_conn() as c: c.execute("INSERT INTO payments (user_id,paypal_order_id,amount,currency,status,created_at) VALUES (?,?,?,?,?,?)",(user["id"],order_id,amount,currency,"pending",datetime.now().isoformat()))
+        return {"order_id":order_id,"approve_url":approve_url,"amount":amount,"currency":currency}
+    except Exception as e: raise HTTPException(500,str(e))
+
+@app.get("/api/payment/status")
+async def pay_status(user=Depends(get_user)):
+    with get_conn() as c: rows=c.execute("SELECT * FROM payments WHERE user_id=? ORDER BY created_at DESC LIMIT 5",(user["id"],)).fetchall()
+    return {"payments":[dict(r) for r in rows]}
+
 @app.get("/api/staff/users")
 async def sf_users(u=Depends(staff_user)):
     with get_conn() as c: rows=c.execute("SELECT id,username,email,role,is_verified,daily_count,total_searches,premium_expires,is_banned,ban_reason,created_at,last_login FROM users ORDER BY created_at DESC").fetchall()
@@ -753,7 +818,7 @@ async def sf_searches(uid:str,u=Depends(staff_user)):
 
 @app.get("/api/staff/sessions")
 async def sf_sessions(u=Depends(staff_user)):
-    with get_conn() as c: rows=c.execute("SELECT s.id,s.sport_tab,s.title,s.updated_at,u.username,u.role FROM sessions s JOIN users u ON s.user_id=u.id ORDER BY s.updated_at DESC LIMIT 300").fetchall()
+    with get_conn() as c: rows=c.execute("SELECT s.id,s.sport_tab,s.title,s.updated_at,s.hidden,u.username,u.role FROM sessions s JOIN users u ON s.user_id=u.id ORDER BY s.updated_at DESC LIMIT 300").fetchall()
     return {"sessions":[dict(r) for r in rows]}
 
 @app.get("/api/staff/session/{sid}")
@@ -762,6 +827,15 @@ async def sf_session(sid:str,u=Depends(staff_user)):
         msgs=c.execute("SELECT role,content,created_at FROM messages WHERE session_id=? ORDER BY created_at",(sid,)).fetchall()
         bets=c.execute("SELECT * FROM saved_bets WHERE session_id=?",(sid,)).fetchall()
     return {"messages":[dict(m) for m in msgs],"bets":[dict(b) for b in bets]}
+
+@app.get("/api/staff/hot-searched")
+async def sf_hot(sport:str="all",u=Depends(staff_user)):
+    return {"hot":db_get_hot_searched(sport if sport!="all" else None,20)}
+
+@app.get("/api/staff/payments")
+async def sf_payments(u=Depends(staff_user)):
+    with get_conn() as c: rows=c.execute("SELECT p.*,u.username,u.email FROM payments p JOIN users u ON p.user_id=u.id ORDER BY p.created_at DESC LIMIT 100").fetchall()
+    return {"payments":[dict(r) for r in rows]}
 
 @app.get("/api/owner/users")
 async def ow_users(u=Depends(owner_user)):
@@ -772,9 +846,9 @@ async def ow_users(u=Depends(owner_user)):
 async def set_role(req:RoleReq,u=Depends(owner_user)):
     target=get_user_by_username(req.username)
     if not target: raise HTTPException(404,"User not found")
-    if target["username"].lower()==OWNER_USERNAME.lower(): raise HTTPException(400,"Cannot modify the protected owner account")
+    if target["username"].lower()==OWNER_USERNAME.lower(): raise HTTPException(400,"Cannot modify the protected owner")
     if req.role not in("free","premium","operator","owner"): raise HTTPException(400,"Invalid role")
-    update_user(target["id"],role=req.role); return {"status":f"Role '{req.role}' set for {target['username']}"}
+    update_user(target["id"],role=req.role); return {"status":f"Role '{req.role}' → {target['username']}"}
 
 @app.post("/api/owner/ban")
 async def ban_route(req:BanReq,u=Depends(owner_user)):
@@ -788,13 +862,19 @@ async def ban_route(req:BanReq,u=Depends(owner_user)):
     return {"status":"Banned"}
 
 @app.post("/api/owner/unban")
-async def unban_route(data:dict,u=Depends(owner_user)):
-    target=get_user_by_username(data.get("username",""))
-    if not target: raise HTTPException(404,"Not found")
-    unban_user(target["id"]); return {"status":f"Unbanned {target['username']}"}
+async def unban_route(req:UnbanReq,u=Depends(owner_user)):
+    if req.username:
+        target=get_user_by_username(req.username)
+        if not target: raise HTTPException(404,"User not found")
+        unban_user(target["id"])
+        return {"status":f"Unbanned {target['username']}"}
+    if req.device_id:
+        unban_device(req.device_id)
+        return {"status":f"Device unbanned"}
+    raise HTTPException(400,"Provide username or device_id")
 
 @app.post("/api/owner/add-code")
-async def add_code_route(req:CodeAddReq,u=Depends(owner_user)):
+async def add_code_r(req:CodeAddReq,u=Depends(owner_user)):
     code=req.code.strip().upper()
     eom=(datetime.now().replace(day=1)+timedelta(days=32)).replace(day=1).isoformat()
     exp=req.expires_at or (eom if req.type=="monthly" else None)
@@ -802,14 +882,38 @@ async def add_code_route(req:CodeAddReq,u=Depends(owner_user)):
     return {"status":f"Code '{code}' added"}
 
 @app.get("/api/owner/codes")
-async def get_codes(u=Depends(owner_user)):
+async def ow_codes(u=Depends(owner_user)):
     with get_conn() as c: rows=c.execute("SELECT * FROM promo_codes ORDER BY created_at DESC").fetchall()
     return {"codes":[dict(r) for r in rows]}
 
 @app.get("/api/owner/bans")
-async def get_bans(u=Depends(owner_user)):
+async def ow_bans(u=Depends(owner_user)):
     with get_conn() as c: rows=c.execute("SELECT bl.*,u.username FROM ban_log bl LEFT JOIN users u ON bl.user_id=u.id ORDER BY bl.created_at DESC LIMIT 200").fetchall()
     return {"bans":[dict(r) for r in rows]}
 
+@app.post("/api/owner/setting")
+async def upd_setting(req:SettingReq,u=Depends(owner_user)):
+    if req.key not in("payments_enabled","premium_price","premium_currency"): raise HTTPException(400,"Invalid key")
+    set_setting(req.key,req.value); return {"status":f"{req.key}={req.value}"}
+
+@app.get("/api/owner/settings")
+async def ow_settings(u=Depends(owner_user)):
+    with get_conn() as c: rows=c.execute("SELECT * FROM settings").fetchall()
+    return {"settings":{r["key"]:r["value"] for r in rows}}
+
+@app.post("/api/owner/confirm-payment")
+async def confirm_payment(data:dict,bg:BackgroundTasks,u=Depends(owner_user)):
+    pid=data.get("payment_id")
+    if not pid: raise HTTPException(400,"payment_id required")
+    with get_conn() as c: row=c.execute("SELECT * FROM payments WHERE id=?",(pid,)).fetchone()
+    if not row: raise HTTPException(404,"Payment not found")
+    p=dict(row); target=get_user_by_id(p["user_id"])
+    if not target: raise HTTPException(404,"User not found")
+    eom=(datetime.now().replace(day=1)+timedelta(days=32)).replace(day=1).isoformat()
+    update_user(target["id"],role="premium",premium_source="paypal",premium_expires=eom)
+    with get_conn() as c: c.execute("UPDATE payments SET status='confirmed',confirmed_at=?,confirmed_by=? WHERE id=?",(datetime.now().isoformat(),u["username"],pid))
+    if GMAIL_APP_PASS: bg.add_task(send_payment_confirm,target["email"],target["username"],p["amount"])
+    return {"status":f"Premium activated for {target['username']} until {eom[:10]}"}
+
 @app.get("/api/health")
-async def health(): return {"status":"online","model":GROQ_MODEL,"version":"6.0"}
+async def health(): return {"status":"online","model":GROQ_MODEL,"version":"7.0","db":os.path.exists(DB_PATH)}
