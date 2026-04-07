@@ -37,18 +37,25 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 FREE_LIMIT = 3
 
 def get_conn():
-    if os.path.exists(DB_PATH):
+    for attempt in range(3):
         try:
-            t=sqlite3.connect(DB_PATH); t.execute("SELECT 1"); t.close()
-        except sqlite3.DatabaseError:
-            print(f"[DB] Corrupted — deleting {DB_PATH}")
-            try: os.remove(DB_PATH)
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA foreign_keys=ON")
+            conn.execute("SELECT 1")  # quick sanity check
+            return conn
+        except sqlite3.DatabaseError as e:
+            print(f"[DB] Attempt {attempt+1} failed: {e}")
+            try: conn.close()
             except: pass
-    conn=sqlite3.connect(DB_PATH)
-    conn.row_factory=sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+            if os.path.exists(DB_PATH):
+                print(f"[DB] Deleting corrupted database: {DB_PATH}")
+                try: os.remove(DB_PATH)
+                except OSError as oe: print(f"[DB] Could not delete: {oe}")
+            if attempt == 2:
+                raise
+    raise RuntimeError("Could not open database after 3 attempts")
 
 def init_db():
     with get_conn() as c:
