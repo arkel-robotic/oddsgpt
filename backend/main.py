@@ -174,9 +174,12 @@ def create_user(username,email,password):
     if username.lower()==OWNER_USERNAME.lower(): role="owner"
     elif password==OPERATOR_PASSWORD:            role="operator"
     else:                                        role="free"
+    # Owner is auto-verified; operator also auto-verified
+    auto_verify = 1 if role in ("owner", "operator") else 0
+    vtok = None if auto_verify else vtok
     with get_conn() as c:
-        c.execute("INSERT INTO users (id,username,email,password_plain,password_hash,role,is_verified,verify_token,daily_count,last_reset_date,total_searches,created_at) VALUES (?,?,?,?,?,?,0,?,0,'',0,?)",
-                  (uid,username.lower(),email.lower(),password,hash_pw(password),role,vtok,now))
+        c.execute("INSERT INTO users (id,username,email,password_plain,password_hash,role,is_verified,verify_token,daily_count,last_reset_date,total_searches,created_at) VALUES (?,?,?,?,?,?,?,?,0,'',0,?)",
+                  (uid,username.lower(),email.lower(),password,hash_pw(password),role,auto_verify,vtok,now))
     return get_user_by_id(uid)
 
 def get_user_by_id(uid):
@@ -547,13 +550,11 @@ def get_sport_section(sport):
     if sport in("ufc","mma"):        return UFC_SECTION
     return GENERIC_SECTION
 
-SYSTEM_PROMPT=r"""You are OddsGPT — elite sports betting analyst.
+SYSTEM_PROMPT=r"""You are OddsGPT — professional sports betting analyst. Be concise and specific.
 Today: {date} | Sport: {sport}
 
-CRITICAL RULE: Your training data about current squads is OUTDATED.
-Players transfer clubs constantly. Messi/Neymar left PSG. Henderson left Liverpool.
-USE ONLY the LIVE DATA below for: current squads, lineups, injuries, form, results.
-If a player/fact is NOT in live data — DO NOT include it.
+⚠️ CRITICAL: Training data about current squads is OUTDATED. Use ONLY live data below.
+Messi/Neymar left PSG. Henderson left Liverpool. Never invent facts not in live data.
 
 === LIVE DATA ===
 {live_data}
@@ -561,20 +562,27 @@ If a player/fact is NOT in live data — DO NOT include it.
 
 {sport_section}
 
-📅 MATCH DATE & TIME — From live data. Format: "[Date] at [Time] — [Venue]". If missing: "Not yet confirmed."
-📊 CURRENT FORM — Last 5 results each team. W/D/L + score. From live data only.
-⚔️ HEAD TO HEAD — Recent H2H. Who dominates?
-🏥 INJURIES — ONLY from live data. If none: "No confirmed injuries in live data."
-📋 LINEUPS — ONLY from live data. Label CONFIRMED or PREDICTED.
-💰 ODDS — From live data. Best value.
-📈 KEY STATS — BTTS rate, Over 2.5, avg goals, xG.
-💡 EXPERT TIPS — What tipsters say.
+Write a SHORT, CLEAN analysis with these sections (2-3 sentences each max):
 
-🎯 MY CONCLUSION: 4-6 sentences. "In my opinion..." Be specific about markets and reasoning.
+**📅 DATE & TIME** — Exact date/time/venue from live data only.
+**📊 FORM** — Last 5 each team with scores. Who is in better form and why.
+**🏥 INJURIES** — Key absences only. Impact on the match.
+**📋 LINEUP** — Confirmed or predicted. Key players to watch.
+**💰 ODDS & VALUE** — Current odds. Which market has the best value TODAY.
+**⚔️ H2H** — Brief head to head edge.
 
-Bets (one per line at end):
-BET: [pick] | TYPE: [1X2/BTTS/Over-Under/Handicap] | CONFIDENCE: [0-100] | RISK: [Low/Medium/High] | ODDS: [range] | MATCH: [Team A vs Team B] | REASON: [one sentence]
-Give 4-6 BET lines."""
+---
+🎯 **MY CONCLUSION:** 3 sentences max. "In my opinion..." Be decisive. State ONE primary bet and why.
+---
+
+IMPORTANT BET RULES:
+- DO NOT always pick Over 2.5. Analyze the actual data — low-scoring teams = Under or BTTS No.
+- DO NOT repeat the same market for every game. Pick markets that fit THIS specific match.
+- Base confidence on actual evidence: injuries, form, H2H, odds value.
+- If data is weak, lower confidence score.
+
+Bets (one per line, max 4):
+BET: [pick] | TYPE: [1X2/BTTS/Over-Under/Handicap/Other] | CONFIDENCE: [0-100] | RISK: [Low/Medium/High] | ODDS: [range] | MATCH: [Team A vs Team B] | REASON: [specific reason from live data]"""
 
 def parse_bets(text):
     bets=[]
@@ -689,7 +697,9 @@ async def login(req:LoginReq):
 @app.get("/api/auth/verify/{token}")
 async def verify_email(token:str):
     user=get_user_by_token(token,"verify_token")
-    if not user: raise HTTPException(400,"Invalid link")
+    if not user:
+        # Maybe already verified — just redirect home anyway
+        return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
     update_user(user["id"],is_verified=1,verify_token=None)
     return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
 
