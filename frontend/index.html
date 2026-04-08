@@ -356,10 +356,34 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 <!-- FORGOT -->
 <div class="ov center" id="forgotOv">
   <div class="mbox" style="border-radius:16px;padding:24px 20px">
-    <div class="mttl">Reset Password <button class="xb" onclick="closeForgot()">✕</button></div>
+    <div class="mttl">Forgot Password <button class="xb" onclick="closeForgot()">✕</button></div>
+    <p style="font-size:12px;color:var(--m3);margin-bottom:14px">Enter your email and we will send you a reset link.</p>
     <div class="fd"><label>Email</label><input id="fE" type="email" placeholder="your@email.com" inputmode="email"/></div>
     <button class="abtn" onclick="doForgot()">Send Reset Link</button>
     <div class="aerr" id="fErr"></div><div class="aok" id="fOk"></div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD -->
+<div class="ov center" id="resetOv">
+  <div class="mbox" style="border-radius:16px;padding:24px 20px">
+    <div class="mttl">Set New Password 🔑</div>
+    <p style="font-size:12px;color:var(--m3);margin-bottom:14px">Choose a new password for your account.</p>
+    <div class="fd"><label>New Password</label><input id="newPw" type="password" placeholder="min 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReset()"/></div>
+    <div class="fd"><label>Confirm Password</label><input id="newPw2" type="password" placeholder="repeat password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReset()"/></div>
+    <button class="abtn" onclick="doReset()">Reset Password</button>
+    <div class="aerr" id="rErr"></div><div class="aok" id="rOk"></div>
+  </div>
+</div>
+
+<!-- EMAIL VERIFIED SUCCESS -->
+<div class="ov center" id="verifiedOv">
+  <div class="mbox" style="border-radius:16px;padding:32px 24px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">✅</div>
+    <div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:var(--win);margin-bottom:8px">Email Verified!</div>
+    <div style="font-size:13px;color:var(--m3);margin-bottom:6px">Your account has been verified successfully.</div>
+    <div style="font-size:12px;color:var(--m);margin-bottom:20px">Llogaria juaj u verifikua me sukses.</div>
+    <button class="abtn" onclick="document.getElementById('verifiedOv').classList.remove('show')">Continue to Login</button>
   </div>
 </div>
 
@@ -503,7 +527,38 @@ function devId(){
 function load(){tok=localStorage.getItem('og_tok')||'';uname=localStorage.getItem('og_u')||'';role=localStorage.getItem('og_r')||'free';}
 function save(){localStorage.setItem('og_tok',tok);localStorage.setItem('og_u',uname);localStorage.setItem('og_r',role);}
 
-(async()=>{load();if(tok){try{const me=await api('/api/auth/me');uname=me.username;role=me.role;dailyUsed=me.daily_used;save();await boot();return;}catch(e){}}showAuth();})();
+(async()=>{
+  load();
+  const params=new URLSearchParams(window.location.search);
+  const path=window.location.pathname;
+
+  // ── Handle password reset link (?token=xxx on /reset path)
+  const resetToken=params.get('token');
+  if(path==='/reset' && resetToken){
+    window.history.replaceState({},'','/');
+    showAuth();
+    document.getElementById('resetOv').dataset.token=resetToken;
+    document.getElementById('resetOv').classList.add('show');
+    return;
+  }
+
+  // ── Handle email verified redirect (?verified=1)
+  const verified=params.get('verified');
+  if(verified){
+    window.history.replaceState({},'','/');
+    if(verified==='1'){
+      document.getElementById('verifiedOv').classList.add('show');
+    }
+    // If already verified just show auth normally
+    if(tok){try{const me=await api('/api/auth/me');uname=me.username;role=me.role;dailyUsed=me.daily_used;save();await boot();return;}catch(e){}}
+    showAuth();
+    return;
+  }
+
+  // ── Normal startup
+  if(tok){try{const me=await api('/api/auth/me');uname=me.username;role=me.role;dailyUsed=me.daily_used;save();await boot();return;}catch(e){}}
+  showAuth();
+})();
 
 async function boot(){
   document.getElementById('auth').style.display='none';
@@ -532,6 +587,22 @@ async function doReg(){
 }
 function showForgot(){document.getElementById('forgotOv').classList.add('show');}
 function closeForgot(){document.getElementById('forgotOv').classList.remove('show');}
+async function doReset(){
+  const pw=V('newPw'); const pw2=V('newPw2');
+  const rErr=document.getElementById('rErr'); const rOk=document.getElementById('rOk');
+  rErr.style.display='none'; rOk.style.display='none';
+  if(!pw||!pw2){rErr.textContent='Fill in both fields';rErr.style.display='block';return;}
+  if(pw!==pw2){rErr.textContent='Passwords do not match';rErr.style.display='block';return;}
+  if(pw.length<6){rErr.textContent='Password min 6 characters';rErr.style.display='block';return;}
+  const token=document.getElementById('resetOv').dataset.token;
+  if(!token){rErr.textContent='Invalid reset link';rErr.style.display='block';return;}
+  try{
+    await api('/api/auth/reset','POST',{token,password:pw});
+    rOk.textContent='✓ Password reset! You can now log in.';rOk.style.display='block';
+    document.getElementById('newPw').value='';document.getElementById('newPw2').value='';
+    setTimeout(()=>{document.getElementById('resetOv').classList.remove('show');showAuth();},2000);
+  }catch(e){rErr.textContent=e.message;rErr.style.display='block';}
+}
 async function doForgot(){
   const e=V('fE');if(!e)return;
   try{await api('/api/auth/forgot','POST',{email:e});document.getElementById('fOk').textContent='✓ Reset link sent / Linku u dërgua';document.getElementById('fOk').style.display='block';}

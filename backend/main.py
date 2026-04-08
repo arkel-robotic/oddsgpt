@@ -696,12 +696,13 @@ async def login(req:LoginReq):
 
 @app.get("/api/auth/verify/{token}")
 async def verify_email(token:str):
+    from fastapi.responses import RedirectResponse
     user=get_user_by_token(token,"verify_token")
     if not user:
-        # Maybe already verified — just redirect home anyway
-        return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
+        # Token already used or invalid — redirect home with flag
+        return RedirectResponse(url="/?verified=already")
     update_user(user["id"],is_verified=1,verify_token=None)
-    return FileResponse(os.path.join(FRONTEND_PATH,"index.html"))
+    return RedirectResponse(url="/?verified=1")
 
 @app.post("/api/auth/resend-verify")
 async def resend_verify(bg:BackgroundTasks,user=Depends(get_user)):
