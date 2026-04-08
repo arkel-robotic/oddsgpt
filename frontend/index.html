@@ -847,7 +847,7 @@ async function loadStaffPayments(){
       <tbody>${d.payments.map(p=>`<tr>
         <td>${esc(p.username)}</td>
         <td style="color:var(--a);font-family:'JetBrains Mono',monospace">${p.currency} ${p.amount}</td>
-        <td><span style="color:${p.status==='confirmed'?'var(--win)':p.status==='pending'?'var(--warn)':'var(--m3)';};font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700">${p.status}</span></td>
+        <td><span style="color:${p.status==='confirmed'?'var(--win)':p.status==='pending'?'var(--warn)':'var(--m3)'};font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700">${p.status}</span></td>
         <td style="font-size:10px;color:var(--m3)">${(p.created_at||'').slice(0,10)}</td>
       </tr>`).join('')}</tbody></table></div>`:
       '<p style="color:var(--m3);font-size:12px">No payments yet</p>';
