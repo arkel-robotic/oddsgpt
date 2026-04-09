@@ -445,15 +445,40 @@ async def groq_call(messages,max_tokens=1000):
     return r.json()["choices"][0]["message"]["content"]
 
 async def tavily_one(sess,query):
-    if not TAVILY_API_KEY: return ""
+    if not TAVILY_API_KEY:
+        print("[Tavily] No API key set")
+        return ""
     try:
-        r=await sess.post(TAVILY_URL,json={"api_key":TAVILY_API_KEY,"query":query,"search_depth":"advanced","max_results":4,"include_answer":True})
-        if r.status_code!=200: return ""
-        d=r.json(); parts=[]
+        r=await sess.post(TAVILY_URL,json={
+            "api_key":TAVILY_API_KEY,
+            "query":query,
+            "search_depth":"basic",   # basic=1 credit, advanced=2 credits
+            "max_results":3,
+            "include_answer":True
+        })
+        if r.status_code==429:
+            print("[Tavily] Rate limit / quota exceeded")
+            return ""
+        if r.status_code==401:
+            print("[Tavily] Invalid API key")
+            return ""
+        if r.status_code!=200:
+            print(f"[Tavily] HTTP {r.status_code}: {r.text[:200]}")
+            return ""
+        d=r.json()
+        parts=[]
         if d.get("answer"): parts.append(d["answer"])
-        for res in d.get("results",[])[:3]: parts.append(f"• {res.get('title','')}: {res.get('content','')[:280]}")
-        return "\n".join(parts)
-    except Exception as e: print(f"[T] {e}"); return ""
+        for res in d.get("results",[])[:3]:
+            parts.append(f"• {res.get('title','')}: {res.get('content','')[:300]}")
+        result="\n".join(parts)
+        print(f"[Tavily] OK: {query[:50]}... ({len(result)} chars)")
+        return result
+    except asyncio.TimeoutError:
+        print(f"[Tavily] Timeout: {query[:50]}")
+        return ""
+    except Exception as e:
+        print(f"[Tavily] Error: {e}")
+        return ""
 
 SPORT_COUNTS={"football":4,"basketball":4,"tennis":4,"hockey":4,"baseball":4,"american football":4,"ufc":1}
 
@@ -511,15 +536,35 @@ async def search_match(team1,team2,sport):
     if sport in("ufc","mma"):
         queries=[("📅 EVENT",f"{matchup} UFC MMA fight date time {today}"),("🥊 RECORDS",f"{team1} {team2} UFC MMA record {year}"),("💪 STATS",f"{team1} striking grappling stats {today}"),("🏋️ CAMP",f"{team1} {team2} training camp {today}"),("🎰 ODDS",f"{matchup} UFC odds {today}"),("📰 NEWS",f"{team1} {team2} UFC news {today}")]
     elif sport in("football","soccer"):
-        queries=[("📅 DATE/TIME",f"{matchup} match date kickoff venue {today}"),("📋 CONFIRMED LINEUP",f"{matchup} confirmed lineup starting XI {today}"),("📋 PREDICTED LINEUP",f"{matchup} predicted lineup {year}"),("👥 SQUAD 1",f"{team1} current squad players {year}"),("👥 SQUAD 2",f"{team2} current squad players {year}"),("🏥 INJURIES",f"{team1} {team2} injuries suspended OUT {today}"),("🔢 TACTICS",f"{matchup} formation tactics {today}"),("📊 FORM 1",f"{team1} last 5 results form {today}"),("📊 FORM 2",f"{team2} last 5 results form {today}"),("⚔️ H2H",f"{matchup} head to head history"),("🎰 ODDS",f"{matchup} betting odds {today}"),("📈 STATS",f"{matchup} xG BTTS over 2.5 {today}")]
+        queries=[
+            ("📅 DATE & VENUE",    f"{matchup} match date kickoff time venue {today}"),
+            ("📋 LINEUPS",         f"{matchup} confirmed predicted lineup starting XI {today}"),
+            ("👥 CURRENT SQUADS",  f"{team1} {team2} current squad players {year}"),
+            ("🏥 INJURIES",        f"{team1} {team2} injuries suspended OUT doubtful {today}"),
+            ("📊 FORM & H2H",      f"{matchup} recent form last 5 head to head results {today}"),
+            ("🎰 ODDS & STATS",    f"{matchup} betting odds xG BTTS over under stats {today}"),
+        ]
     else:
-        queries=[("📅 DATE",f"{matchup} {sport} date {today}"),("👥 ROSTERS",f"{team1} {team2} {sport} current roster {year}"),("🏥 INJURIES",f"{team1} {team2} injuries {today}"),("📊 FORM",f"{matchup} form {today}"),("🎰 ODDS",f"{matchup} {sport} odds {today}"),("📈 STATS",f"{matchup} {sport} stats {today}")]
+        queries=[
+            ("📅 DATE",    f"{matchup} {sport} date time {today}"),
+            ("👥 SQUADS",  f"{team1} {team2} {sport} current players {year}"),
+            ("🏥 INJURIES",f"{team1} {team2} injuries {today}"),
+            ("📊 FORM",    f"{matchup} {sport} form results {today}"),
+            ("🎰 ODDS",    f"{matchup} {sport} betting odds {today}"),
+            ("📈 STATS",   f"{matchup} {sport} stats {today}"),
+        ]
+    print(f"[Search] Running {len(queries)} Tavily queries for {team1} vs {team2}")
     async with httpx.AsyncClient(timeout=20.0) as sess:
         results=await asyncio.gather(*[tavily_one(sess,q) for _,q in queries],return_exceptions=True)
     parts=[]
     for (label,_),r in zip(queries,results):
         if isinstance(r,str) and r.strip(): parts.append(f"\n{label}:\n{r}")
-    return "\n".join(parts) or "No live data found."
+    combined="\n".join(parts)
+    if not combined.strip():
+        print("[Search] No results from Tavily — check API key and quota")
+        return "No live data found. Check Tavily API key and quota at app.tavily.com."
+    print(f"[Search] Got {len(combined)} chars of live data")
+    return combined
 
 def extract_match(text):
     m=re.search(r"([A-Za-z0-9\s\.'\-]+?)\s+(?:vs?\.?|versus|[-])\s+([A-Za-z0-9\s\.'\-]+?)(?:\n|$|[,\?])",text,re.IGNORECASE)
@@ -636,6 +681,25 @@ async def create_pp_order(amount,currency="USD"):
 # App
 init_db()
 app=FastAPI(title="OddsGPT",version="7.0")
+
+@app.on_event("startup")
+async def startup_event():
+    """Keep the service alive and verify DB on startup."""
+    print(f"[OddsGPT] v7.0 started. DB: {DB_PATH} exists={os.path.exists(DB_PATH)}")
+    asyncio.create_task(_keepalive())
+
+async def _keepalive():
+    """Ping self every 10 minutes to prevent Render free tier spindown."""
+    await asyncio.sleep(60)  # wait 1 min after startup
+    while True:
+        try:
+            if APP_URL and "localhost" not in APP_URL:
+                async with httpx.AsyncClient(timeout=10.0) as c:
+                    await c.get(f"{APP_URL}/api/health")
+                print("[keepalive] pinged self")
+        except Exception as e:
+            print(f"[keepalive] {e}")
+        await asyncio.sleep(600)  # 10 minutes
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
 app.mount("/static",StaticFiles(directory=FRONTEND_PATH),name="static")
 
@@ -934,4 +998,27 @@ async def confirm_payment(data:dict,bg:BackgroundTasks,u=Depends(owner_user)):
     return {"status":f"Premium activated for {target['username']} until {eom[:10]}"}
 
 @app.get("/api/health")
-async def health(): return {"status":"online","model":GROQ_MODEL,"version":"7.0","db":os.path.exists(DB_PATH)}
+async def health():
+    return {
+        "status":         "online",
+        "model":          GROQ_MODEL,
+        "version":        "7.0",
+        "db":             os.path.exists(DB_PATH),
+        "tavily_key_set": bool(TAVILY_API_KEY),
+        "groq_key_set":   bool(GROQ_API_KEY),
+        "gmail_set":      bool(GMAIL_APP_PASS),
+    }
+
+@app.get("/api/test-search")
+async def test_search(q:str="Arsenal vs Chelsea football today"):
+    """Quick test to verify Tavily is working. Visit /api/test-search in browser."""
+    if not TAVILY_API_KEY:
+        return {"error":"TAVILY_API_KEY not set","fix":"Add it in Render Environment tab"}
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as sess:
+            result=await tavily_one(sess,q)
+        if result:
+            return {"status":"✅ Tavily working","chars":len(result),"preview":result[:300]}
+        return {"status":"❌ Tavily returned empty","tip":"Check quota at app.tavily.com"}
+    except Exception as e:
+        return {"status":"❌ Error","error":str(e)}
