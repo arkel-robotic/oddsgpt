@@ -334,21 +334,37 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
         <button class="t2 on" onclick="sAuth('login')">Login</button>
         <button class="t2" onclick="sAuth('reg')">Register</button>
       </div>
+
+      <!-- LOGIN FORM -->
       <div id="loginF">
         <div class="fd"><label>Username</label><input id="lU" type="text" placeholder="your username" autocomplete="username" inputmode="text"/></div>
         <div class="fd"><label>Password</label><input id="lP" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
         <button class="abtn" onclick="doLogin()">Login</button>
-        <div class="alink"><a onclick="showForgot()">Forgot password? · Harrove fjalëkalimin?</a></div>
+        <div class="alink" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;align-items:center">
+          <a onclick="showForgot()" style="color:var(--m3)">Forgot password? · Harrove fjalëkalimin?</a>
+          <a onclick="showTerms()" style="color:var(--a);font-size:11px">📋 Terms & Privacy Policy</a>
+        </div>
       </div>
+
+      <!-- REGISTER FORM -->
       <div id="regF" style="display:none">
         <div class="fd"><label>Username</label><input id="rU" type="text" placeholder="choose a username" autocomplete="username" inputmode="text"/></div>
         <div class="fd"><label>Email</label><input id="rE" type="email" placeholder="your@email.com" autocomplete="email" inputmode="email"/></div>
         <div class="fd"><label>Password</label><input id="rP" type="password" placeholder="minimum 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')doReg()"/></div>
+        <!-- Terms checkbox -->
+        <div style="display:flex;align-items:flex-start;gap:10px;margin:12px 0;background:var(--p);border:1px solid var(--b2);border-radius:9px;padding:11px 13px">
+          <input type="checkbox" id="termsCheck" style="margin-top:2px;width:16px;height:16px;accent-color:var(--a);cursor:pointer;flex-shrink:0"/>
+          <label for="termsCheck" style="font-size:12px;color:var(--m3);line-height:1.6;cursor:pointer">
+            I have read and agree to the <a onclick="showTerms();return false;" style="color:var(--a);text-decoration:underline;cursor:pointer">Terms & Privacy Policy</a>. I am 18+ years old and understand that OddsGPT is for entertainment only.<br>
+            <span style="color:var(--m);font-size:11px">Kam lexuar dhe pranoj <a onclick="showTerms();return false;" style="color:var(--a)">Kushtet & Privatësinë</a>. Jam 18+ vjeç.</span>
+          </label>
+        </div>
         <button class="abtn" onclick="doReg()">Create Account · Krijo Llogari</button>
+        <div style="text-align:center;margin-top:8px"><a onclick="showTerms()" style="color:var(--a);font-size:11px;cursor:pointer">📋 Read Terms & Privacy Policy</a></div>
       </div>
+
       <div class="aerr" id="aErr"></div>
       <div class="aok"  id="aOk"></div>
-      <div class="terms-note">By signing up you agree to our <a onclick="showTerms()">Terms & Privacy Policy</a>.<br>Duke u regjistruar pranoni <a onclick="showTerms()">Kushtet & Privatësinë</a>.</div>
     </div>
   </div>
 </div>
@@ -356,11 +372,12 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 <!-- FORGOT -->
 <div class="ov center" id="forgotOv">
   <div class="mbox" style="border-radius:16px;padding:24px 20px">
-    <div class="mttl">Forgot Password <button class="xb" onclick="closeForgot()">✕</button></div>
-    <p style="font-size:12px;color:var(--m3);margin-bottom:14px">Enter your email and we will send you a reset link.</p>
-    <div class="fd"><label>Email</label><input id="fE" type="email" placeholder="your@email.com" inputmode="email"/></div>
-    <button class="abtn" onclick="doForgot()">Send Reset Link</button>
-    <div class="aerr" id="fErr"></div><div class="aok" id="fOk"></div>
+    <div class="mttl">Forgot Password 🔑 <button class="xb" onclick="closeForgot()">✕</button></div>
+    <p style="font-size:12px;color:var(--m3);margin-bottom:16px">Enter your email and we will send you a password reset link within seconds.<br><span style="color:var(--m)">Fut email-in dhe do të dërgojmë një link për të rivendosur fjalëkalimin.</span></p>
+    <div class="fd"><label>Your Email</label><input id="fE" type="email" placeholder="your@email.com" inputmode="email" onkeydown="if(event.key==='Enter')doForgot()"/></div>
+    <button class="abtn" onclick="doForgot()">📧 Send Reset Link</button>
+    <div class="aerr" id="fErr"></div>
+    <div class="aok" id="fOk"></div>
   </div>
 </div>
 
@@ -532,13 +549,16 @@ function save(){localStorage.setItem('og_tok',tok);localStorage.setItem('og_u',u
   const params=new URLSearchParams(window.location.search);
   const path=window.location.pathname;
 
-  // ── Handle password reset link (?token=xxx on /reset path)
+  // ── Handle password reset link (?token=xxx)
+  // Works on both /reset?token=xxx AND /?token=xxx (in case of redirect)
   const resetToken=params.get('token');
-  if(path==='/reset' && resetToken){
+  if(resetToken){
     window.history.replaceState({},'','/');
     showAuth();
-    document.getElementById('resetOv').dataset.token=resetToken;
-    document.getElementById('resetOv').classList.add('show');
+    setTimeout(()=>{
+      document.getElementById('resetOv').dataset.token=resetToken;
+      document.getElementById('resetOv').classList.add('show');
+    },100);
     return;
   }
 
@@ -582,8 +602,17 @@ async function doLogin(){
   try{const r=await api('/api/auth/login','POST',{username:u,password:p,device_id:devId()});tok=r.token;uname=r.username;role=r.role;save();if(!r.is_verified){document.getElementById('vBanner').style.display='block';}await boot();}catch(e){aerr(e.message);}
 }
 async function doReg(){
-  const u=V('rU'),e=V('rE'),p=V('rP');if(!u||!e||!p)return aerr('Fill in all fields / Plotëso të gjitha fushat');
-  try{const r=await api('/api/auth/register','POST',{username:u,email:e,password:p,device_id:devId()});tok=r.token;uname=r.username;role=r.role;save();if(r.email_sent){document.getElementById('vBanner').style.display='block';aok('Account created! Check your email. · Llogaria u krijua! Kontrollo email-in.');setTimeout(boot,2500);}else{await boot();}}catch(e){aerr(e.message);}
+  const u=V('rU'),e=V('rE'),p=V('rP');
+  if(!u||!e||!p) return aerr('Fill in all fields / Plotëso të gjitha fushat');
+  const checked=document.getElementById('termsCheck')?.checked;
+  if(!checked) return aerr('You must agree to the Terms & Privacy Policy before registering.
+Duhet të pranosh Kushtet & Privatësinë para regjistrimit.');
+  try{
+    const r=await api('/api/auth/register','POST',{username:u,email:e,password:p,device_id:devId()});
+    tok=r.token;uname=r.username;role=r.role;save();
+    if(r.email_sent){document.getElementById('vBanner').style.display='block';aok('Account created! Check your email to verify. · Llogaria u krijua! Kontrollo email-in.');setTimeout(boot,2500);}
+    else{await boot();}
+  }catch(e){aerr(e.message);}
 }
 function showForgot(){document.getElementById('forgotOv').classList.add('show');}
 function closeForgot(){document.getElementById('forgotOv').classList.remove('show');}
@@ -604,9 +633,21 @@ async function doReset(){
   }catch(e){rErr.textContent=e.message;rErr.style.display='block';}
 }
 async function doForgot(){
-  const e=V('fE');if(!e)return;
-  try{await api('/api/auth/forgot','POST',{email:e});document.getElementById('fOk').textContent='✓ Reset link sent / Linku u dërgua';document.getElementById('fOk').style.display='block';}
-  catch(e){document.getElementById('fErr').textContent=e.message;document.getElementById('fErr').style.display='block';}
+  const email=V('fE');
+  const fErr=document.getElementById('fErr');
+  const fOk=document.getElementById('fOk');
+  fErr.style.display='none'; fOk.style.display='none';
+  if(!email){fErr.textContent='Enter your email address';fErr.style.display='block';return;}
+  try{
+    await api('/api/auth/forgot','POST',{email});
+    fOk.textContent='✅ Reset link sent! Check your inbox (and spam folder).
+Linku u dërgua! Kontrollo inbox-in (dhe spam).';
+    fOk.style.display='block';
+    document.getElementById('fE').value='';
+  }catch(e){
+    fErr.textContent=e.message;
+    fErr.style.display='block';
+  }
 }
 function showTerms(){document.getElementById('termsOv').classList.add('show');}
 function closeTerms(){document.getElementById('termsOv').classList.remove('show');}
